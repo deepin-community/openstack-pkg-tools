@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+# This script stands for "OpenStack Shell Test Tools"
+# and is a set of functions used to test the validity of
+# shell scripts.
+# Param: $1 file1
+#        $2 file2
+osstt_assertFilesAreSame () {
+	FILE1=${1}
+	FILE2=${2}
+	F1_MD5=$(md5sum ${FILE1} | awk '{print $1}')
+	F2_MD5=$(md5sum ${FILE2} | awk '{print $1}')
+	if [ "${F1_MD5}" = "${F2_MD5}" ] ; then
+		RET=yes
+	else
+		RET=no
+	fi
+}

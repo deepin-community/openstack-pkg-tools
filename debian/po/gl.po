@@ -1,0 +1,455 @@
+# Galician translations for glance package.
+# Copyright (C) 2012 THE glance'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the glance package.
+#
+# Jorge Barreiro Gonzalez <yortx.barry@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: glance\n"
+"Report-Msgid-Bugs-To: openstack-pkg-tools@packages.debian.org\n"
+"POT-Creation-Date: 2019-10-10 18:44+0200\n"
+"PO-Revision-Date: 2012-06-23 12:02+0200\n"
+"Last-Translator: Jorge Barreiro <yortx.barry@gmail.com>\n"
+"Language-Team: Galician <proxecto@trasno.net>\n"
+"Language: gl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 1.0\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid "Set up a database for glance-registry?"
+msgid "Set up a database for this package?"
+msgstr "Quere configurar unha base de datos para «glance-registry»?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| "No database has been set up for glance-registry to use. Before "
+#| "continuing, you should make sure you have:"
+msgid ""
+"No database has been set up for this package. Before continuing, you should "
+"make sure you have the following information:"
+msgstr ""
+"Non se configurou ningunha base de datos para que «glance-registry» a use. "
+"Antes de continuar, debería asegurarse de que ten:"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| " - the server host name (that server must allow TCP connections\n"
+#| "   from this machine);\n"
+#| " - a username and password to access the database.\n"
+#| " - A database type that you want to use."
+msgid ""
+" * the type of database that you want to use - generally the MySQL backend\n"
+"   (which is compatible with MariaDB) is a good choice, and other\n"
+"   implementations like PostgreSQL or SQLite are often problematic with\n"
+"   OpenStack (this depends on the service);\n"
+" * the database server hostname (that server must allow TCP connections "
+"from\n"
+"   this machine);\n"
+" * a username and password to access the database."
+msgstr ""
+" - o nome do servidor (o servidor debe permitir conexións TCP\n"
+"   desde esta máquina);\n"
+" - un nome de usuario e contrasinal para acceder á base de datos.\n"
+" - O tipo de base de datos que quere usar."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+"Note that if you plan on using a remote database server, you must first "
+"configure dbconfig-common to do so (using dpkg-reconfigure dbconfig-common), "
+"and the remote database server needs to be configured with adequate "
+"credentials."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| "If some of these requirements are missing, reject this option and run "
+#| "with regular sqlite support."
+msgid ""
+"If some of these requirements are missing, do not choose this option. Run "
+"with regular SQLite support instead."
+msgstr ""
+"Se non cumpre algún destes requisitos, rexeite esta opción e use a "
+"infraestrutura «sqlite» normal."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| "You can change this setting later on by running 'dpkg-reconfigure -plow "
+#| "glance-registry"
+msgid ""
+"You can change this setting later on by running \"dpkg-reconfigure -plow\"."
+msgstr ""
+"Pode cambiar esta opción máis tarde executando «dpkg-reconfigure -plow "
+"glance-registry»."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:1001
+msgid "Manage keystone_authtoken with debconf?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:1001
+msgid ""
+"Every OpenStack service must contact Keystone, and this is configured "
+"through the [keystone_authtoken] section of the configuration. Specify if "
+"you wish to handle this configuration through debconf."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:2001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server public endpoint URL:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:2001
+msgid ""
+"Specify the URL of your Keystone authentication server public endpoint. This "
+"value will be set in the www_authenticate_uri directive."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+msgid "Keystone region:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+msgid "Specify the Keystone region to use."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid ""
+"The region name is usually a string containing only ASCII alphanumerics, "
+"dots, and dashes."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:4001
+msgid "Create service user?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:4001
+msgid ""
+"This package can reuse an already existing username, or create one right "
+"now. If you wish to create one, then you will be prompted for the admin "
+"credentials."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:5001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server admin username:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:6001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server admin project name:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:7001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server admin password:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:8001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server service username:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:9001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server service project name:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:10001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Auth server service password:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid "Configure RabbitMQ access with debconf?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"OpenStack services need access to a message queue server, defined by the "
+"transport_url directive. Please specify whether configuring this should be "
+"handled through debconf."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"Only access to RabbitMQ is handled, and the RabbitMQ user creation isn't "
+"performed. A new RabbitMQ user can be created with the commands:\""
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+" - rabbitmqctl add_user openstack PASSWORD\n"
+" - rabbitmqctl set_permissions -p / openstack \".*\" \".*\" \".*\""
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"Note that the default RabbitMQ guest account cannot be used for remote "
+"connections."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+msgid "IP address of your RabbitMQ host:"
+msgstr ""
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid ""
+"In order to interoperate with other components of OpenStack, this package "
+"needs to connect to a central RabbitMQ server."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+#, fuzzy
+#| msgid "Please specify the flavor of pipeline to be used by Glance."
+msgid "Please specify the IP address of that server."
+msgstr "Indique o tipo de canalización que usará Glance."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+msgid "Username for connection to the RabbitMQ server:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+#, fuzzy
+#| msgid "Please specify the flavor of pipeline to be used by Glance."
+msgid "Please specify the username used to connect to that RabbitMQ server."
+msgstr "Indique o tipo de canalización que usará Glance."
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid "Password for connection to the RabbitMQ server:"
+msgstr ""
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+#, fuzzy
+#| msgid "Please specify the flavor of pipeline to be used by Glance."
+msgid "Please specify the password used to connect to that RabbitMQ server."
+msgstr "Indique o tipo de canalización que usará Glance."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid "Register this service in the Keystone endpoint catalog?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Each OpenStack service (each API) must be registered in the Keystone catalog "
+"in order to be accessible. This is done using \"openstack service create\" "
+"and \"openstack endpoint create\". This can be done automatically now."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Note that you will need to have an up and running Keystone server on which "
+"to connect using a known admin project name, admin username and password. "
+"The admin auth token is not used anymore."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Also, if a service with a matching name is already present in the Keystone "
+"catalog, endpoint registration will be aborted."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid "Keystone server address:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid ""
+"Please enter the address (IP or resolvable address) of the Keystone server, "
+"for creating the new service and endpoints."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid ""
+"Any non-valid ipv4, ipv6 or host address string will abort the endpoint "
+"registration."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:3001
+msgid "Keystone endpoint protocol:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:4001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "Keystone admin username:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:4001
+#: ../openstack-pkg-tools.configure-endpoint.templates:5001
+#: ../openstack-pkg-tools.configure-endpoint.templates:6001
+msgid ""
+"To create the service endpoint, this package needs to know the Admin "
+"username, project name, and password, so it can issue commands through the "
+"Keystone API."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:5001
+msgid "Keystone admin project name:"
+msgstr ""
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:6001
+msgid "Keystone admin password:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:7001
+msgid "This service endpoint address:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:7001
+msgid ""
+"Please enter the endpoint address that will be used to contact this service. "
+"You can specify either a Fully Qualified Domain Name (FQDN) or an IP address."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:8001
+#, fuzzy
+#| msgid "Auth server admin token:"
+msgid "This service endpoint protocol:"
+msgstr "Token do administrador do servidor de autenticación:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid "Name of the region to register:"
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid ""
+"OpenStack supports using regions, with each region representing a different "
+"location (usually a different data center). Please enter the region name "
+"that you wish to use when registering the endpoint."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid "A non-valid string will abort the API endpoint registration."
+msgstr ""
+
+#, fuzzy
+#~| msgid "Auth server admin token:"
+#~ msgid "Auth server admin endpoint URL:"
+#~ msgstr "Token do administrador do servidor de autenticación:"

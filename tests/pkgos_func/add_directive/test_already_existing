@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp example.ini example-result.ini
+pkgos_add_directive example-result.ini keystone_authtoken "auth_uri =" "# Address of your keystone server"
+osstt_assertFilesAreSame example-result.ini example.ini
+rm example-result.ini
+if [ "${RET}" = "yes" ] ; then
+	exit 0
+else
+	echo "pkgos_add_directive modified the .ini when the directive already existed"
+	exit 1
+fi

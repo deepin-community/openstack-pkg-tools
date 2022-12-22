@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -e
+
+usage () {
+	echo "$0 creates a new Git repository out of your current working tree on alioth."
+	echo "You must be at the root of that local git repository"
+	echo "$0 will use the current folder as the name for the Alioth git repository."
+	echo ""
+	echo "Usage: $0 <group> <repo>"
+	echo "example: $0 openstack will create a /git/openstack/><group>/<repo>.git repository"
+	echo "note that you will need to have write access on the destination project,"
+	echo "which means you must be a member of that said project on Alioth."
+	echo ""
+	echo "Please send patch/comments to: Debian OpenStack <openstack-devel@lists.alioth.debian.org>"
+	exit 1
+}
+
+if [ $# != 2 ] ; then
+    usage
+fi
+
+GROUP=$1
+REPO=$2
+
+ssh git.debian.org "/home/groups/openstack/stuff/create-repo.sh ${GROUP} ${REPO}"
+git remote add  origin ssh://git.debian.org/git/openstack/${GROUP}/${REPO}.git
+git push -u --all origin

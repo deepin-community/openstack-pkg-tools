@@ -1,0 +1,38 @@
+Source: openstack-pkg-tools
+Section: devel
+Priority: optional
+Maintainer: Debian OpenStack <team+openstack@tracker.debian.org>
+Uploaders:
+ Thomas Goirand <zigo@debian.org>,
+ Michal Arbet <michal.arbet@ultimum.io>,
+Build-Depends:
+ debhelper-compat (= 10),
+Standards-Version: 4.1.3
+Vcs-Browser: https://salsa.debian.org/openstack-team/debian/openstack-pkg-tools
+Vcs-Git: https://salsa.debian.org/openstack-team/debian/openstack-pkg-tools.git
+
+Package: openstack-pkg-tools
+Architecture: all
+Multi-Arch: foreign
+Depends:
+ python3-pip,
+ gettext,
+ jq,
+ po-debconf,
+ ${misc:Depends},
+Recommends:
+ autopkgtest,
+ madison-lite,
+ pristine-tar,
+Description: Tools and scripts for building Openstack packages in Debian
+ This package contains some useful shell scripts and helpers for building the
+ OpenStack packages in Debian, including:
+ .
+  * shared code for maintainer scripts (.config, .postinst, ...).
+  * init script templates to automatically generate init scripts for sysv-rc and
+    systemd.
+  * tools to build backports using sbuild and/or Jenkins based on gbp workflow.
+  * utility to maintain git packaging (to be included in a debian/rules).
+ .
+ Even if this package is maintained in order to build OpenStack packages, it is
+ of a general purpose, and it can be used for building any package.

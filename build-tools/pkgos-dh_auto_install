@@ -1,0 +1,69 @@
+#!/bin/sh
+
+set -e
+set -x
+
+PKGOS_USE_PY2=yes
+PKGOS_USE_PY3=yes
+PKGOS_IN_TMP=no
+for i in $@ ; do
+	case "${1}" in
+	"--no-py3")
+		PKGOS_USE_PY3=no
+		shift
+		;;
+	"--no-py2")
+		PKGOS_USE_PY2=no
+		shift
+		;;
+	"--in-tmp")
+		PKGOS_IN_TMP=yes
+		shift
+		;;
+	*)
+		;;
+	esac
+done
+
+SRC_PKG_NAME=$(dpkg-parsechangelog -SSource)
+PY_MODULE_NAME=$(echo ${SRC_PKG_NAME} | sed s/python-//)
+
+if [ "${PKGOS_USE_PY2}" = "yes" ] ; then
+	PYTHONS=$(pyversions -vr 2>/dev/null)
+fi
+if [ "${PKGOS_USE_PY3}" = "yes" ] ; then
+	PYTHON3S=$(py3versions -vr 2>/dev/null)
+fi
+
+if [ "${PKGOS_USE_PY2}" = "yes" ] ; then
+	for pyvers in ${PYTHONS}; do
+		python${pyvers} setup.py install --install-layout=deb --root $(pwd)/debian/python-${PY_MODULE_NAME}
+	done
+fi
+
+if [ "${PKGOS_USE_PY3}" = "yes" ] ; then
+	if [ "${PKGOS_IN_TMP}" = "yes" ] ; then
+		TARGET_DIR=tmp
+	else
+		TARGET_DIR=python3-${PY_MODULE_NAME}
+	fi
+	for pyvers in ${PYTHON3S}; do
+		python${pyvers} setup.py install --install-layout=deb --root $(pwd)/debian/${TARGET_DIR}
+	done
+fi
+rm -rf $(pwd)/debian/python*/usr/lib/python*/dist-packages/*.pth
+rm -rf $(pwd)/debian/tmp/usr/lib/python*/dist-packages/*.pth
+
+# Move the files as python<PYVERSINO>-foo if we're packaging for both Py2 and Py3
+# otherwise, leave the file as-is.
+if [ -d $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin ] ; then
+	for i in $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/* ; do
+		SCRIPT_NAME=$(basename ${i})
+		if [ "${PKGOS_USE_PY2}" = "yes" ] ; then
+			mv $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/${SCRIPT_NAME} $(pwd)/debian/python-${PY_MODULE_NAME}/usr/bin/python2-${SCRIPT_NAME}
+		fi
+		if [ "${PKGOS_USE_PY3}" = "yes" ] ; then
+			mv $(pwd)/debian/python3-${PY_MODULE_NAME}/usr/bin/${SCRIPT_NAME} $(pwd)/debian/python3-${PY_MODULE_NAME}/usr/bin/python3-${SCRIPT_NAME}
+		fi
+	done
+fi

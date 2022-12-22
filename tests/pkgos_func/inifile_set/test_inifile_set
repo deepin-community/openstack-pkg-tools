@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp example.ini example-result.ini
+
+pkgos_inifile set example-result.ini DEFAULT lock_dir /var/lock
+osstt_assertFilesAreSame example-result.ini example-after-fix-lock_dir.ini
+rm example-result.ini
+if [ "${RET}" = "yes" ] ; then
+	exit 0
+else
+	echo "example-result.ini is not the same as example-after-fix-lock_dir.ini"
+	exit 1
+fi

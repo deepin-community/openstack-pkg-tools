@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp example.ini example-fortest.ini
+pkgos_extract_section example-fortest.ini example-fortest-db.ini api-database
+osstt_assertFilesAreSame example-after-removed-section.ini example-fortest.ini
+if [ "${RET}" != "yes" ] ; then
+	echo "pkgos_extract_section didn't extract a section correctly"
+	echo "Diff of source file:"
+	diff -u example-after-removed-section.ini example-fortest.ini
+	rm -f example-fortest.ini example-fortest-db.ini
+	exit 1
+fi
+
+osstt_assertFilesAreSame example-extracted-section.ini example-fortest-db.ini
+if [ "${RET}" = "yes" ] ; then
+	rm -f example-fortest.ini example-fortest-db.ini
+        exit 0
+else
+        echo "pkgos_extract_section didn't extract a section correctly"
+        echo "Diff of extracted section file:"
+        diff -u example-extracted-section.ini example-fortest-db.ini
+	rm example-fortest.ini example-fortest-db.ini
+        exit 1
+fi

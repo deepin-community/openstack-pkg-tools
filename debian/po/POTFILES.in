@@ -1,0 +1,4 @@
+[type: gettext/rfc822deb] openstack-pkg-tools.configure-db.templates
+[type: gettext/rfc822deb] openstack-pkg-tools.configure-ksat.templates
+[type: gettext/rfc822deb] openstack-pkg-tools.configure-rabbit.templates
+[type: gettext/rfc822deb] openstack-pkg-tools.configure-endpoint.templates

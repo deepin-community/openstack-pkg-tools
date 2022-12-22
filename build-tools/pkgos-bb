@@ -1,0 +1,117 @@
+#!/bin/sh
+
+set -e
+set -x
+
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
+
+# Manage parameters of this script
+usage () {
+	echo "Usage: $0 [-u] [-d <DISTRO>]"
+	echo "          -u: Upload to the defined Debian repository"
+	echo " -d <DISTRO>: Define from which distro to backport"
+	exit 1
+}
+
+UPLOAD=no
+SRC_DISTRO=sid
+for i in $@ ; do
+	case ${1} in
+	"-u")
+		UPLOAD=yes
+		shift
+	;;
+	"-d")
+		if [ -z "${2}" ] || [ -z "${3}" ] ; then usage ; fi
+		SRC_DISTRO=${2}
+		shift
+		shift
+	;;
+	*)
+	;;
+	esac
+done
+
+if [ -z "${1}" ] ; then usage ; fi
+
+PKG_NAME=${1}
+
+# Double-guessing some stuffs
+if [ `whoami` = "jenkins" ] ; then
+        BUILD_ROOT=/var/lib/jenkins/backports/${BUILD_NUMBER}
+else
+        BUILD_ROOT=~/src/os-bpo
+fi
+
+
+# Get info from packages.debian.org
+PKG_INFO_FILE=`mktemp -t pkg_info_file.XXXXXX`
+wget --no-check-certificate -O ${PKG_INFO_FILE} http://packages.debian.org/${SRC_DISTRO}/${PKG_NAME}
+if [ `lsb_release -i -s` = "Ubuntu" ] ; then
+	RMADURL="--url=http://qa.debian.org/madison.php"
+else
+	RMADURL=""
+fi
+DEB_VERSION=`rmadison $RMADURL --suite=${SRC_DISTRO} ${PKG_NAME} | grep -E ' amd64| all' | awk '{print $3}'`
+NO_EPOCH_DEB_VERSION=$(echo ${DEB_VERSION} | sed 's/^[[:digit:]]*://')
+UPSTREAM_VERSION=`echo ${DEB_VERSION} | sed 's/-[^-]*$//' | cut -d":" -f2`
+DSC_URL=`cat ${PKG_INFO_FILE} | grep dsc | cut -d'"' -f2`
+rm ${PKG_INFO_FILE}
+
+# Prepare build folder and go in it
+MY_CWD=`pwd`
+rm -rf ${BUILD_ROOT}/$PKG_NAME
+mkdir -p ${BUILD_ROOT}/$PKG_NAME
+cd ${BUILD_ROOT}/$PKG_NAME
+
+# Download the .dsc and extract it
+dget -d -u ${DSC_URL}
+PKG_SRC_NAME=`ls *.dsc | cut -d_ -f1`
+PKG_NAME_FIRST_CHAR=`echo ${PKG_SRC_NAME} | awk '{print substr($0,1,1)}'`
+
+# Guess source package name using an ls of the downloaded .dsc file
+DSC_FILE=`ls *.dsc`
+DSC_FILE=`basename $DSC_FILE`
+SOURCE_NAME=`echo $DSC_FILE | cut -d_ -f1`
+
+# Rename the build folder if the source package name is different from binary
+if ! [ "${PKG_NAME}" = "${SOURCE_NAME}" ] ; then
+	cd ..
+	rm -rf $SOURCE_NAME
+	mv $PKG_NAME $SOURCE_NAME
+	cd $SOURCE_NAME
+fi
+
+# Extract the source and make it a backport
+dpkg-source -x *.dsc
+cd ${SOURCE_NAME}-${UPSTREAM_VERSION}
+dch --newversion ${DEB_VERSION}~${BPO_POSTFIX} -b --allow-lower-version --distribution ${TARGET_DISTRO}-backports -m  "Rebuilt for ${TARGET_DISTRO}."
+
+# Chech changelog
+pkgos-check-changelog || true
+
+# Build the package
+sbuild
+
+# Copy in the FTP repo
+cd ..
+rm ${SOURCE_NAME}_${NO_EPOCH_DEB_VERSION}~${BPO_POSTFIX}_amd64.build
+TARGET_FTP_FOLDER=${REPO_ROOT}/debian/pool/${REPO_NOCHANGE_BACKPORT_DEST}/main/${PKG_NAME_FIRST_CHAR}/$SOURCE_NAME
+rm -rf ${TARGET_FTP_FOLDER}
+mkdir -p ${TARGET_FTP_FOLDER}
+cp *bpo* *.orig.tar.* ${TARGET_FTP_FOLDER}
+
+# Update the archive and the sbuild chroot
+pkgos-scan-repo ${REPO_NOCHANGE_BACKPORT_DEST}
+
+# Uploading to FTP
+if [ "${UPLOAD}" = "yes" ] ; then
+	REMOTE_FOLDER=/home/ftp/debian/pool/${SCP_DEST_SUITE}/main/${PKG_NAME_FIRST_CHAR}/$SOURCE_NAME
+	ssh ${SCP_DEST_HOST} "mkdir -p ${REMOTE_FOLDER}"
+	scp *bpo* *.orig.tar.* ${SCP_DEST_HOST}:${REMOTE_FOLDER}
+fi

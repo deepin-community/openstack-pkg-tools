@@ -1,0 +1,107 @@
+#!/bin/sh
+
+set -e
+set -x
+
+# Config vars
+PKGOS_USE_PY2=yes
+PKGOS_USE_PY3=yes
+PKGOS_TEST_PARALLEL=yes
+PKGOS_TEST_SERIAL=no
+
+# Vars used in commands
+PYTHONS=disabled
+PYTHON3S=disabled
+TEST_PARALLEL_OPT="--parallel"
+TEST_SERIAL_OPT=""
+
+for i in $@ ; do
+	case "${1}" in
+	"--no-py3")
+		PKGOS_USE_PY3=no
+		shift
+		;;
+	"--no-py2")
+		PKGOS_USE_PY2=no
+		shift
+		;;
+        "--no-parallel")
+                PKGOS_TEST_PARALLEL=no
+                shift
+                ;;
+        "--serial")
+                PKGOS_TEST_SERIAL=yes
+                PKGOS_TEST_PARALLEL=no
+                shift
+                ;;
+	*)
+		;;
+	esac
+done
+
+if [ "${PKGOS_USE_PY2}" = "yes" ] ; then
+	PYTHONS=2.7
+fi
+if [ "${PKGOS_USE_PY3}" = "yes" ] ; then
+	PYTHON3S=$(py3versions -vr 2>/dev/null)
+fi
+if [ "${PKGOS_TEST_PARALLEL}" = "no" ] ; then
+	TEST_PARALLEL_OPT=""
+fi
+if [ "${PKGOS_TEST_SERIAL}" = "yes" ] ; then
+	TEST_SERIAL_OPT="--serial"
+fi
+
+for pyvers in ${PYTHONS} ${PYTHON3S}; do
+	if [ "${pyvers}" = "disabled" ] ; then
+		continue
+	fi
+	PYMAJOR=$(echo ${pyvers} | cut -d'.' -f1)
+	echo "===> Testing with python${pyers} (python${PYMAJOR})"
+	if [ "${PYMAJOR}" = "3" ] ; then
+		if [ -d `pwd`/debian/tmp/usr/lib/python3/dist-packages ] && [ -z "${PYTHONPATH}" ] ; then
+			export PYTHONPATH=`pwd`/debian/tmp/usr/lib/python3/dist-packages
+		fi
+	elif [ "${PYMAJOR}" = "2" ] ; then
+		if [ -d `pwd`/debian/tmp/usr/lib/python2.7/dist-packages ] && [ -z "${PYTHONPATH}" ] ; then
+			export PYTHONPATH=`pwd`/debian/tmp/usr/lib/python2.7/dist-packages
+		fi
+	fi
+	if [ -e .stestr.conf ] ; then
+		if [ -x /usr/bin/python${PYMAJOR}-stestr ] ; then
+			STESTR=/usr/bin/python${PYMAJOR}-stestr
+		else
+			STESTR=stestr
+		fi
+		rm -rf .stestr
+		if ! PYTHON=python${pyvers} ${STESTR} run ${TEST_SERIAL_OPT} ${TEST_PARALLEL_OPT} --subunit $@ | subunit2pyunit ; then
+			echo "======> STESTR TEST SUITE FAILED FOR python${pyvers}: displaying pip3 freeze output..."
+			if [ -x /usr/bin/pip3 ] ; then
+				pip3 freeze
+			fi
+			exit 1
+		fi
+		${STESTR} slowest
+		rm -rf .stestr
+	elif [ -e .testr.conf ] ; then
+		if [ -x /usr/bin/testr-python${PYMAJOR} ] ; then
+			TESTR=/usr/bin/testr-python${PYMAJOR}
+		else
+			TESTR=testr
+		fi
+		rm -rf .testrepository
+		${TESTR} init
+		TEMP_REZ=$(mktemp -t)
+		if ! PYTHON=python${pyvers} ${TESTR} run ${TEST_SERIAL_OPT} ${TEST_PARALLEL_OPT} --subunit $@ | tee ${TEMP_REZ} | subunit2pyunit ; then
+			echo "======> TESTR TEST SUITE FAILED FOR python${pyvers}: displaying pip3 freeze output..."
+			if [ -x /usr/bin/pip3 ] ; then
+				pip3 freeze
+			fi
+			exit 1
+		fi
+		cat ${TEMP_REZ} | subunit-filter -s --no-passthrough | subunit-stats
+		rm -f ${TEMP_REZ}
+		${TESTR} slowest
+		rm -rf .testrepository
+	fi
+done

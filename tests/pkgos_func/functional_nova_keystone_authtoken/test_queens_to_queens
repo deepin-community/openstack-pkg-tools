@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp nova-queens.conf nova-test.ini
+
+. ./convert_script
+
+osstt_assertFilesAreSame nova-test.ini nova-queens.conf
+if [ "${RET}" = "yes" ] ; then
+	rm nova-test.ini
+	exit 0
+else
+	diff -u nova-queens.conf nova-test.ini
+	echo "pkgos_deprecate_directive didn't deprecate correcly"
+	exit 1
+fi

@@ -1,0 +1,1082 @@
+openstack-pkg-tools (117) unstable; urgency=medium
+
+  * Using override_installsystemd instead of override_dh_systemd_enable
+    (Closes: #976038).
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 29 Nov 2020 20:50:57 +0100
+
+openstack-pkg-tools (116) unstable; urgency=medium
+
+  * Add a pkgos_extract_section function.
+  * UWSGI number of workers fall back to threads/2.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 15 Nov 2020 22:59:21 +0100
+
+openstack-pkg-tools (115) unstable; urgency=medium
+
+  [ James Page ]
+  * build-tools/pkgos-generate-snapshot: Use python3 for generation
+    of snapshots. (Closes: #973520)
+
+  [ Gianfranco Costamagna ]
+  * Commit Ubuntu delta to Debian
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 01 Nov 2020 20:32:43 +0100
+
+openstack-pkg-tools (114) unstable; urgency=medium
+
+  * Define systemd Documentation= even if SYSTEMD_DOC isn't defined (use
+    "Documentation=man:${NAME}(1)" in this case).
+  * Add a $CUSTOM_SYSTEMD_UNIT variable in pkgos-gen-systemd-unit for
+    per-.service customization (needed for swift).
+  * Add reading from service config file to configure UWSGI ip, port, and
+    number of processes.
+  * When searching for a directive line number, first search for the value
+    which is not commented.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 30 Oct 2020 13:00:07 +0100
+
+openstack-pkg-tools (113) unstable; urgency=medium
+
+  * Fix domain_name, user_domain_name value to Default
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Thu, 30 Jul 2020 17:04:45 +0200
+
+openstack-pkg-tools (112) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Drop myself from uploaders.
+  * d/copyright: Bump my copyright year.
+
+  [ Thomas Goirand ]
+  * Revert ipv6 binding patch. This looks like breaking uwsgi.
+  * Add a runtime depends on python3-pip, and run pip3 freeze if unit tests
+    are failing, which should help a lot reporting issues upstream.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 01 Jul 2020 10:06:14 +0200
+
+openstack-pkg-tools (111) unstable; urgency=medium
+
+  * uwsgi: bind on ivp6 is /proc/net/if_inet6 exists, and if it is more than
+    zero line long.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 28 May 2020 15:59:58 +0200
+
+openstack-pkg-tools (110) unstable; urgency=medium
+
+  [ Michal Arbet ]
+  * Fix etc/pkgos/pkgos.conf to use ussuri instead of train
+
+  [ Thomas Goirand ]
+  * Updated es.po debconf translations (Closes: #958873).
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 10 May 2020 16:29:15 +0200
+
+openstack-pkg-tools (109) unstable; urgency=medium
+
+  * Added patches from Ubuntu:
+  [ Corey Bryant ]
+  * pkgos-gen-systemd-unit: Ensure AFTER and WANTS are initialized when
+    one of Should-Start or Required-Start are specified.
+
+  [ Thomas Goirand ]
+  * Fix uwsgi bind address so it doesn't require IPv6.
+  * Endpoint creation: fallsback to hostname -i when detecting IP. Do not crash
+    if we can't find an IP address.
+  * Also support +ds1 as Debian version for packages.
+
+  [ Michal Arbet ]
+  * Fix etc/pkgos/pkgos.conf to use train instead of stein
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 06 Mar 2020 14:58:01 +0100
+
+openstack-pkg-tools (108) unstable; urgency=medium
+
+  * Add support for serial testing.
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Fri, 14 Feb 2020 14:54:31 +0100
+
+openstack-pkg-tools (107) unstable; urgency=medium
+
+  * Remove collate from mysql alter table in pkgos_func
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Tue, 17 Dec 2019 12:44:34 +0100
+
+openstack-pkg-tools (106) unstable; urgency=medium
+
+  * Add pkgos-add-missing-options.sh
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Fri, 22 Nov 2019 13:34:32 +0100
+
+openstack-pkg-tools (105) unstable; urgency=medium
+
+  * Fix lintian's systemd-service-file-refers-to-obsolete-target
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Thu, 21 Nov 2019 13:56:34 +0100
+
+openstack-pkg-tools (104) unstable; urgency=medium
+
+  * Fix systemd service unit file generating.
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Wed, 21 Nov 2019 13:35:51 +0100
+
+openstack-pkg-tools (103) unstable; urgency=medium
+
+  * Fix networking.service dependency in generated .service files.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 20 Nov 2019 11:20:54 +0100
+
+openstack-pkg-tools (102) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Use debhelper-compat instead of debian/compat.
+
+  [ Michal Arbet ]
+  * Remove admin endpoint configuration
+  * Update po files
+
+  [ Thomas Goirand ]
+  * Take into account Required-Start: in init scripts when generating the
+    systemd .service unit file.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 18 Nov 2019 16:09:03 +0100
+
+openstack-pkg-tools (101) unstable; urgency=medium
+
+  * Re-upload source-only so it migrates to testing.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jul 2019 22:25:38 +0200
+
+openstack-pkg-tools (100) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 09 Jul 2019 16:29:57 +0200
+
+openstack-pkg-tools (99) experimental; urgency=medium
+
+  [ Thomas Goirand ]
+  * pkgos-bop-jenkins: fix checking out correct packaging branch.
+  * Fixed pkgos.conf defaults.
+  * Removed hardening-no-stackprotector from lintian profile blacklist.
+
+  [ Michal Arbet ]
+  * Switch admin endpoint 35357 -> 5000 (Closes: #927979).
+  * d/copyright: Edit copyright year for me
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 01 Apr 2019 12:08:25 +0200
+
+openstack-pkg-tools (98) experimental; urgency=medium
+
+  * More pkgos-debpypi fixes toward removing py2.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 31 Mar 2019 11:38:26 +0200
+
+openstack-pkg-tools (97) experimental; urgency=medium
+
+  * Also fix running testr without -python3 suffix.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 29 Mar 2019 15:36:02 +0100
+
+openstack-pkg-tools (96) experimental; urgency=medium
+
+  * Transmit $@ to the test runner.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 28 Mar 2019 12:57:12 +0100
+
+openstack-pkg-tools (95) experimental; urgency=medium
+
+  * Another fix in misc/pkgos-debpypi.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 27 Mar 2019 22:40:04 +0100
+
+openstack-pkg-tools (94) experimental; urgency=medium
+
+  * Correction in misc/pkgos-debpypi.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 27 Mar 2019 22:25:26 +0100
+
+openstack-pkg-tools (93) experimental; urgency=medium
+
+  * Add --in-tmp option to pkgos-dh_auto_install.
+  * Minor tweak to pkgos-debpypi.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 27 Mar 2019 22:10:01 +0100
+
+openstack-pkg-tools (92) experimental; urgency=medium
+
+  * Make pkgos-dh_auto_test work without /usr/bin/python3-stestr existing.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 26 Mar 2019 22:15:56 +0100
+
+openstack-pkg-tools (91) unstable; urgency=medium
+
+  * Update Danish debconf translation (Closes: #923136).
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 24 Feb 2019 19:24:05 +0100
+
+openstack-pkg-tools (90) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/changelog: Remove trailing whitespaces.
+
+  [ Thomas Goirand ]
+  * Updated nl.po debconf translation. (Closes: #909685).
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 10 Jan 2019 09:56:24 +0100
+
+openstack-pkg-tools (89) unstable; urgency=medium
+
+  * Enable assign role admin instead of service
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Sun, 11 Nov 2018 17:09:51 +0100
+
+openstack-pkg-tools (88) unstable; urgency=medium
+
+  * Mark openstack-pkg-tools as Multi-Arch: foreign.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 31 Oct 2018 10:20:44 +0100
+
+openstack-pkg-tools (87) unstable; urgency=medium
+
+  [ Michal Arbet ]
+  * Add configuration of auth_url, debconf value was ignored,
+    now fixed
+  * d/copyright: Add me to copyright file
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Wed, 24 Oct 2018 18:32:44 +0200
+
+openstack-pkg-tools (86) unstable; urgency=medium
+
+  [ Michal Arbet ]
+  * d/control: Add me to uploaders field
+  * Fix pkgos_inifile set in last block of configuration file
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Fri, 19 Oct 2018 12:41:10 +0200
+
+openstack-pkg-tools (85) unstable; urgency=medium
+
+  * Fixed pkgos-debpypi to not use always os-faults.json.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 24 Aug 2018 11:17:57 +0200
+
+openstack-pkg-tools (84) experimental; urgency=medium
+
+  * Move some of the dependencies to Recommends: (Closes: #902830).
+  * Debconf templates translations updates, with thanks to:
+    - fr.po, Alban Vidal (Closes: #903055).
+    - de.po, Chris Leick (Closes: #906541).
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 24 Aug 2018 08:57:33 +0200
+
+openstack-pkg-tools (83) experimental; urgency=medium
+
+  * Using Python 3 to build doc.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 22 Aug 2018 13:30:17 +0200
+
+openstack-pkg-tools (82) unstable; urgency=medium
+
+  [ Thomas Goirand ]
+  * Fix pkgos-debpypi to use PyPi json + jq, and remove the use of doap.xml.
+  * Avoid race condition in pkgos-scan-repo by using flock.
+  * Fix path when loading .crt file for uwsgi.
+
+  [ Ondřej Nový ]
+  * d/control: Use team+openstack@tracker.debian.org as maintainer
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 20 Jun 2018 15:15:30 +0200
+
+openstack-pkg-tools (81) unstable; urgency=medium
+
+  * Allow the use of --pyargv "some things with spaces" when starting uwsgi,
+    which is mandatory to start neutron-api the correct way.
+  * Add a show-args option to init scripts, which is useful for debuging.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 25 May 2018 16:46:04 +0200
+
+openstack-pkg-tools (80) unstable; urgency=medium
+
+  * Also bind uwsgi on ipv6.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 25 May 2018 10:06:52 +0200
+
+openstack-pkg-tools (79) unstable; urgency=medium
+
+  * Manages startup of UWSGI applications.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 24 May 2018 17:34:50 +0200
+
+openstack-pkg-tools (78) unstable; urgency=medium
+
+  * Add support for NotifyAccess= systemd directive customization.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 14 May 2018 14:37:23 +0200
+
+openstack-pkg-tools (77) unstable; urgency=medium
+
+  * Call db_unregister for rabbit and keystone_authtoken.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 10 May 2018 14:41:03 +0000
+
+openstack-pkg-tools (76) unstable; urgency=medium
+
+  * Add pkgos-keyring-package shell script.
+  * Fixed reading of old rabbitmq value, thanks to Kyle <aradian@tma-0.net>
+    (Closes: #897268).
+  * Fixed typo when displaying "writing RabbitMQ credentials", thanks again
+    to Kyle <aradian@tma-0.net> (Closes: #897267).
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 01 May 2018 15:28:01 +0200
+
+openstack-pkg-tools (75) unstable; urgency=medium
+
+  * Do not run pyversions in pkgos-dh_auto_install if --no-py2.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 02 Apr 2018 00:33:38 +0200
+
+openstack-pkg-tools (74) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Running wrap-and-sort -bast
+
+  [ Thomas Goirand ]
+  * Updated nl.po debconf translation thanks to Frans Spiesschaert
+    (Closes: #893155).
+  * Updated pt.po debconf translation thanks to Pedro 'm42' Ribeiro from the
+    traduz team (Closes: #893124).
+  * Updated pt_BR.po debconf translation thanks to Adriano Rafael Gomes
+    (Closes: #893088).
+  * Added selection of protocol (ie: http vs https) when registering endpoints.
+
+  [ Michal Arbet ]
+  * Add no-parallel option to pkgos-dh_auto_test
+  * Fix pkgos_dbc_postrm script
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 26 Mar 2018 14:12:42 +0000
+
+openstack-pkg-tools (72) unstable; urgency=medium
+
+  * Remove openstack-pkg-tools.header.templates from POTFILE.in.
+  * Fixed it.po syntax error (Closes: #891539) and ran debconf-updatepo.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 12 Mar 2018 08:54:07 +0100
+
+openstack-pkg-tools (71) unstable; urgency=medium
+
+  * Team upload.
+
+  [ Thomas Goirand ]
+  * Updated Italian debconf translation, thanks to Daniele Mazzocchio
+    <daniele.mazzocchio@infomaniak.com>.
+
+  [ Michal Arbet ]
+  * Add pkgos-gen-completion script
+
+  [ David Rabel ]
+  * Updated Russian debconf translation, thanks to Yuri Kozlov
+    <yuray@komyakino.ru> (Closes: #892314).
+  * Updated German debconf translation, thanks to Chris Leick
+    <c.leick@vollbio.de> (Closes: #892602).
+
+ -- David Rabel <david.rabel@noresoft.com>  Sun, 11 Mar 2018 11:27:34 +0100
+
+openstack-pkg-tools (70) unstable; urgency=medium
+
+  * Fixed rmadison call's grep to really select arch amd64 and all.
+  * Add pkgos_add_directive function.
+  * Add a unit test suite for pkgos_func and run it at build time.
+  * pkgos-readd-keystone-authtoken-missing-options now sets
+    www_authenticate_uri by default, not auth_uri which is deprecated.
+  * Add generic templates to replace individual copies on each OpenStack
+    service. Thanks to Justin B Rye for the English review.
+  * Rewrote functions for managing keystone_authtoken.
+  * Also using | subunit2pyunit for stestr.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 03 Mar 2018 18:40:07 +0100
+
+openstack-pkg-tools (69) unstable; urgency=medium
+
+  * Jenkins build tools:
+    - Git clone from correct salsa.debian.org group.
+    - Fixed default for stretch and queens in pkgos.conf.
+    - Generate InRelease file in pkgos-scan-repo.
+  * Add pkgos-readd-keystone-authtoken-missing-options.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 28 Feb 2018 15:33:13 +0100
+
+openstack-pkg-tools (68) unstable; urgency=medium
+
+  * Set PYTHONPATH to `pwd`/debian/tmp/usr/lib/python${pyvers}/dist-packages
+    if that path exists when running pkgos-dh_auto_test.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 23 Feb 2018 17:23:02 +0000
+
+openstack-pkg-tools (67) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 21 Feb 2018 10:32:26 +0000
+
+openstack-pkg-tools (66) experimental; urgency=medium
+
+  * Fixed running with stestr.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 15 Feb 2018 23:20:45 +0100
+
+openstack-pkg-tools (65) experimental; urgency=medium
+
+  * Use stestr in priority over testrepository. This is needed for tempest.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 11 Feb 2018 15:46:45 +0000
+
+openstack-pkg-tools (64) experimental; urgency=medium
+
+  * A few fixes in pkgos-debpypi.
+  * Also handles testing with stestr instead of testrepository.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 10 Feb 2018 20:39:26 +0100
+
+openstack-pkg-tools (63) unstable; urgency=medium
+
+  [ Michal Arbet ]
+  * Fix pkg-dh_auto_install, pkg-dh_auto_test to use --no-pyX flags.
+
+  [ Thomas Goirand ]
+  * Standards-Version is now 4.1.3.
+  * Update VCS URLs.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 23 Jan 2018 23:18:15 +0100
+
+openstack-pkg-tools (62) unstable; urgency=medium
+
+  * Make pkgos_inifile work even if there's twice a directive.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 15 Dec 2017 00:01:02 +0100
+
+openstack-pkg-tools (61) unstable; urgency=medium
+
+  * Fixed GID for Glance and Cinder.
+  * Standards-Version is now 4.1.2.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 14 Dec 2017 08:38:50 +0000
+
+openstack-pkg-tools (60) unstable; urgency=medium
+
+  * Fixed pkgos_adduser for nova, cinder, glance.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 13 Dec 2017 22:04:23 +0100
+
+openstack-pkg-tools (59) unstable; urgency=medium
+
+  * Using allocated UID/GID for OpenStack Nova, Cinder and Glance.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 12 Dec 2017 13:48:22 +0100
+
+openstack-pkg-tools (58) unstable; urgency=medium
+
+  * Team upload.
+  * Allow space in pkgos_inifile set value (Closes: #847104)
+  * Support multiple default gw in pkgos_register_endpoint_config
+    (Closes: #859198)
+  * Don't hardcode /bin/ip and use ip from $PATH
+    (prevents command-with-path-in-maintainer-script from Lintian)
+  * Use deb.debian.org mirror
+
+ -- Ondřej Nový <onovy@debian.org>  Sat, 09 Dec 2017 18:34:44 +0100
+
+openstack-pkg-tools (57) unstable; urgency=medium
+
+  * Change WorkingDirectory to ~
+  * Replace ExecStartPre with RuntimeDirectory/CacheDirectory
+  * Don't create /var/lib and /var/log directories in init,
+    only in postinst
+  * Don't create cache subdirectory in /var/lib/<project> directory
+  * Create /var/cache/<project> directory in SysV init script
+  * SysV init script clean, return exit codes
+  * Finish upstart remove
+
+ -- Ondřej Nový <onovy@debian.org>  Sat, 02 Dec 2017 19:41:23 +0100
+
+openstack-pkg-tools (56) unstable; urgency=medium
+
+  * Fixed search for line function of pkgos_func.
+  * Fixed writing the username part of the transport_url directive.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 30 Nov 2017 14:53:39 +0000
+
+openstack-pkg-tools (55) unstable; urgency=medium
+
+  [ Thomas Goirand ]
+  * build-tools/pkgos-infra-install-sbuild:
+    - Using ftp.fr.debian.org instead of httpredir.debian.org.
+  * Add misc/libsbuild-perl-ChrootSetup.pm-hotfix.patch to fix not-supported
+    option of gnupg that sbuild from jessie-backport is using. Hopefully, this
+    will be fixed in sbuild from jessie-bpo.
+  * Merge changes from Ubuntu:
+    - build-tools/pkgos-generate-snapshot: Add helper for generating
+      snapshots from upstream git repositories.
+    - init-template/init-script-template: Ensure that main project
+      configuration file is the first passed to the daemon, allowing
+      subsequent configuration files to override values correctly
+      inline with upstart configurations (LP: #1550223).
+    - init-template/pkgos-gen-systemd-unit: Set TimeoutStopSec=15 to
+      avoid really long restarts when services are not fully up.
+  * Add pkgos.stdpkg.make.
+  * Allow one to disable py2 or py3 for pkgos-dh_auto_{install,test}.
+  * Standards-Version is now 4.1.1.
+  * Add support for [DEFAULT]/transport_url for rabbitmq setup.
+  * Remove upstart support.
+  * Speed-up pkgos_inifile (stop parsing in shell, use more grep to find out
+    line number of directive).
+
+  [ Ondřej Nový ]
+  * Bumped debhelper compat version to 10
+  * build-tools/pkgos-infra-build-pkg:
+    - Reset branch if already exists
+  * misc/pkgos-alioth-new-git: Updated for new GIT repos layout
+
+  [ Daniel Baumann ]
+  * Updating vcs fields.
+  * Updating copyright format url.
+  * Running wrap-and-sort -bast.
+  * Updating maintainer field.
+  * Updating standards version to 4.0.0.
+  * Removing gbp.conf, not used anymore or should be specified in the
+    developers dotfiles.
+  * Updating standards version to 4.0.1.
+  * Deprecating priority extra as per policy 4.0.1.
+  * Updating standards version to 4.1.0.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 09 Nov 2017 21:53:29 +0000
+
+openstack-pkg-tools (54) unstable; urgency=medium
+
+  * Do not use ip (from iproute2) and route (form net-tools) in config
+    scripts, as these aren't essential packages.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 31 Mar 2017 11:49:28 +0000
+
+openstack-pkg-tools (53) unstable; urgency=medium
+
+  [ Thomas Goirand ]
+  * Added prerm and postrm functions to handle dbconfig-common db removal.
+  * Fixed log folder adm permissions.
+  * pkgos-alioth-new-git is now using rsync to upload, so it can resume.
+  * Lots of improvements, including tooling for building packages within
+    OpenStack infrastructure.
+
+  [ Ondřej Nový ]
+  * d/s/options: extend-diff-ignore of .gitreview
+  * d/control: Using OpenStack's Gerrit as VCS URLs.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 30 Jun 2016 13:32:09 +0200
+
+openstack-pkg-tools (52) unstable; urgency=medium
+
+  [ Thomas Goirand ]
+  * Allow build with pkgos-bb / pkgos-bop on non-amd64 machines.
+  * Fix all "hyphen-used-as-minus-sign" manpage warnings.
+  * Don't use a setup hook for schroot to setup
+    /etc/apt/sources.list.d/openstack.list if we're using overlay / AUFS. In
+    such a case, just write in /var/lib/sbuild/${TARGET_DISTRO}/etc/apt.
+  * Don't attempt to install linux-image-amd64 jenkins-cli jenkins-job-builder,
+    and do not attempt using jenkins-job-builder anymore when setting-up a
+    Jenkins builder.
+  * Add backquotes when doing ALTER DATABASE after a db setup.
+
+  [ Ondřej Nový ]
+  * Don't add service user to adm group
+  * Use group adm for /var/log/<service> directory
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 18 Jun 2016 19:40:20 +0200
+
+openstack-pkg-tools (51) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Removed useless ${python:Depends} and ${shlibs:Depends} in depends
+
+  [ Thomas Goirand ]
+  * Check if debian/python-foo/usr/bin exists before attempting to rename files
+    in there.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 16 Jun 2016 08:42:43 +0000
+
+openstack-pkg-tools (50) unstable; urgency=medium
+
+  * Do not export OSLO_PACKAGE_VERSION in pkgos-dh_auto_install.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 11 Jun 2016 17:00:32 +0000
+
+openstack-pkg-tools (49) unstable; urgency=medium
+
+  * Fixed pkgos-dh_auto_install.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 11 Jun 2016 16:55:20 +0000
+
+openstack-pkg-tools (48) unstable; urgency=medium
+
+  * Added export OSLO_PACKAGE_VERSION so we don't have to do it in individual
+    packages.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 Jun 2016 20:34:41 +0000
+
+openstack-pkg-tools (47) unstable; urgency=medium
+
+  * Added PYTHONS:=$(shell pyversions -vr) PYTHON3S:=$(shell py3versions -vr)
+    in pkgos.make so we don't repeat it.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 Jun 2016 20:15:17 +0000
+
+openstack-pkg-tools (46) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Use dpkg-parsechangelog -S param instead of sed/cut/grep magic
+
+  [ Andrii Kroshchenko ]
+  * Add man page for pkgos.make
+
+  [ Ivan Udovichenko ]
+  * init-template/pkgos-gen-systemd-unit: increase default timeout to a
+    reasonable value (graceful_shutdown_timeout [1]). This change is higly
+    recommended for OpenStack services which use oslo.service library.
+    (LP: #1589490) See oslo_service/_options.py in the oslo.service package.
+
+  [ Thomas Goirand ]
+  * Fix pkgos-sbuild-jenkins for Ubuntu: do not attempt to install
+    linux-image-amd64 which doesn't exist in Ubuntu.
+  * Add build-tools/pkgos-dh_auto_install.
+  * Add build-tools/pkgos-dh_auto_test.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 Jun 2016 21:43:47 +0200
+
+openstack-pkg-tools (45) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Use https protocol for remote GIT fetching
+  * Added support for Documentation field in systemd units
+  * misc/pkgos-debpypi:
+    - Changed Vcs-* to https protocol
+    - Changed UPSTREAM_GIT to https protocol and made it simple exp. var
+    - Bumped Standards-Versions to 3.9.8
+    - Use pypi.debian.net for d/watch
+  * pkgos.make fetch-upstream-remote:
+    - Change local GIT remote if UPSTREAM_GIT changed
+    - Check if protocol of UPSTREAM_GIT is https
+  * d/copyright: Added myself
+  * pkgos-parse-requirements: added epoch 1 for python-neutronclient
+
+  [ Andrii Kroshchenko ]
+  * Add man pages for:
+    - pkgos-alioth-new-git
+    - pkgos-alternative-bin
+    - pkgos-bb.
+    - pkgos-bop
+    - pkgos-bop-jenkins
+    - pkgos-debpypi
+    - pkgos-fetch-fake-repo
+    - pkgos-fix-config-default
+    - pkgos-gen-systemd-unit
+    - pkgos-gen-upstart-job
+    - pkgos-infra-build-pkg
+    - pkgos-infra-install-sbuild
+    - pkgos-parse-requirements
+    - pkgos-reqsdiff
+    - pkgos-scan-repo
+    - pkgos-setup-sbuild
+    - pkgos-show-control-depends
+    - pkgos-testr
+    - pkgos-check-changelog
+  * Add new script: pkgos-check-changelog
+  * build-tools/pkgos-bb:
+    - add using pkgos-check-changelog
+  * build-tools/pkgos-bop:
+    - add using pkgos-check-changelog
+  * etc/pkgos/pkgos.conf
+    - add options for configuration behaivor pkgos-check-changelog
+
+  [ Thomas Goirand ]
+  * Uncompress manpages from Andrii Kroshchenko in the source tree.
+  * Added more text in man pages.
+  * Add fixes for overlayfs in pkgos-setup-sbuild.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 07 Jun 2016 07:35:22 +0000
+
+openstack-pkg-tools (44) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Fixed Vcs-Browser URL to new format
+
+  [ Thomas Goirand ]
+  * Added pkgos-infra-install-sbuild and pkgos-infra-build-pkg to build
+    OpenStack packages on upstream infra.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 19 Apr 2016 12:53:13 +0200
+
+openstack-pkg-tools (43) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Support custom shell in pkgos_var_user_group function
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 13 Apr 2016 21:01:27 +0000
+
+openstack-pkg-tools (42) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Changed default shell of daemons to /bin/false (disabled)
+  * Standards-Version is 3.9.8 now (no change)
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 13 Apr 2016 17:47:44 +0000
+
+openstack-pkg-tools (41) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 04 Apr 2016 08:52:57 +0000
+
+openstack-pkg-tools (40) experimental; urgency=medium
+
+  [ Thomas Goirand ]
+  * Add to systemd service file generation the handling of Before=, through
+    parsing of sysv-rc's X-Start-Before: field.
+  * Add needed set -x and set -e when generating startup scripts.
+  * pkgos-bpo-jenkins: parses debian/gbp.conf branch names to do git checkout
+    of the correct branches before building a pristine-tar package.
+  * Standards-Version: 3.9.7 (no change).
+  * Added Ondřej Nový as uploader.
+  * Added registering of endpoint using project-name, admin-name and password
+    to Keystone, instead of the admin auth token.
+
+  [ Ondřej Nový ]
+  * Add a NO_OPENSTACK_CONFIG_FILE_DAEMON_ARG option.
+  * Optionally run autopkgtest when building package.
+  * Alias git-buildpackage on unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 13 Mar 2016 18:17:11 +0000
+
+openstack-pkg-tools (39) experimental; urgency=medium
+
+  [ Ondřej Nový ]
+  * Don't overwrite current groups, just add user to group adm.
+  * Fix user shell when upgrading package.
+
+  [ Thomas Goirand ]
+  * Added the possibility to override the default Type=simple in systemd
+    .service files.
+  * VCS URLs using HTTPs.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 07 Feb 2016 16:14:59 +0800
+
+openstack-pkg-tools (38) experimental; urgency=medium
+
+  [ Thomas Goirand ]
+  * Switch to Mitaka in pkgos.conf.
+  * Added server-packages list.
+  * Added option to build from trunk.
+  * Now setting-up sbuild using overlay, not tarballs.
+  * Added new pkgos-fix-config-default utility.
+  * Updated package list for Mitaka in /etc/pkgos/package-list.
+
+  [ Ondřej Nový ]
+  * Sanity checks in init-template generator.
+  * Make pkgos-gen-upstart-job more compatible with pkgos-gen-systemd-unit.
+  * Fixed typo SYSTEM_USER -> SYSTEM_GROUP in init-template.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 24 Nov 2015 13:41:15 +0100
+
+openstack-pkg-tools (37) unstable; urgency=medium
+
+  * Using Keystone API v3 to register endpoints.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 02 Nov 2015 14:12:40 +0000
+
+openstack-pkg-tools (36) unstable; urgency=medium
+
+  * Uploading to unstable.
+  * Now using mysql+pymysql for the mysql DSN backend (and correcting old
+    mysql:// DSN to use that).
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 13 Oct 2015 14:50:54 +0200
+
+openstack-pkg-tools (35) experimental; urgency=medium
+
+  * Split the package list configuration into separate files from pkgos.conf.
+  * Now using openstackclient instead of keystoneclient to configure endpoints.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 17 Sep 2015 14:24:29 +0200
+
+openstack-pkg-tools (34) experimental; urgency=medium
+
+  [ Ivan Udovichenko ]
+  * Add possibility to set custom shell via pkgos_adduser
+    function.
+  * Fix issues with not sorted versions in pkgos-parse-requirements
+    utility.
+  * Fix issue with detecting the first character in package name
+    in pkgos-debpypi script.
+
+  [ Thomas Goirand ]
+  * pkgos-debpypi now detects a .test.conf and writes debian/rules unit tests
+    launching accordingly.
+  * Correctly detects the location of the conf.py file to properly detect the
+    way to run sphinx-build.
+  * debpypi: respect the DEB_BUILD_OPTIONS=nodocs when creating debian/rules.
+  * Optimized pkgos_inifile by stopping parsing when not in the correct
+    section.
+  * Repaired sets of auth_host directive when writing keystone_authtoken.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 02 Sep 2015 14:56:07 +0200
+
+openstack-pkg-tools (33) experimental; urgency=medium
+
+  * Fixes package branches when building Jessie backports on Jenkins.
+  * Some fixes to build tools.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 29 Jul 2015 23:31:43 +0200
+
+openstack-pkg-tools (32) unstable; urgency=medium
+
+  * Really using bzip2 when compressing as bz2.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 16 Jun 2015 13:29:54 +0000
+
+openstack-pkg-tools (31) unstable; urgency=medium
+
+  * Added bzip2 compression support for the orig.tar.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 16 Jun 2015 13:21:23 +0000
+
+openstack-pkg-tools (30) unstable; urgency=medium
+
+  * Fixed pkgos-alternative-bin removing wrong python version of alternative.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jun 2015 15:08:48 +0000
+
+openstack-pkg-tools (29) unstable; urgency=medium
+
+  * Builds an orig.tar.gz if debian/gbp.conf indicates gz and not xz.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jun 2015 10:31:56 +0200
+
+openstack-pkg-tools (28) unstable; urgency=medium
+
+  * Removes override_dh_builddeb from .PHONY (which was causing .debs to not be
+    created at all).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Jun 2015 10:21:01 +0200
+
+openstack-pkg-tools (27) unstable; urgency=medium
+
+  * Added pkgos-alternative-bin to make it easy to handle alternatives as
+    /usr/bin/python{2,3}-something.
+  * Added a new gen-orig-gz feature, so we can use that instead of xz which
+    produces unpredictable results.
+  * Removed overrides of dh_builddeb an default compression options (as xz is
+    now the default, and others pointed out -9 is a bad idea).
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 10 Jun 2015 15:13:42 +0200
+
+openstack-pkg-tools (26) unstable; urgency=medium
+
+  * build-tools/pkgos-setup-sbuild:
+    - Using invoke-rc.d instead of service, as it honores /usr/sbin/policy-rc.d
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 01 Jun 2015 17:33:57 +0200
+
+openstack-pkg-tools (25) unstable; urgency=medium
+
+  * /var/log/<PROJ> folders are now owned by the adm group (Closes: #781792).
+  * Add "respawn limit" stanza to pkgos-gen-upstart-job script template.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 01 Jun 2015 12:14:43 +0200
+
+openstack-pkg-tools (24) unstable; urgency=medium
+
+  * Added tooling for sbuild.
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 17 Apr 2015 10:48:33 +0200
+
+openstack-pkg-tools (23) experimental; urgency=medium
+
+  * Reviewed long description.
+  * Added build scripts and lots of utilities to automate building of OpenStack
+    packages.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 25 Feb 2015 21:56:24 +0100
+
+openstack-pkg-tools (22) unstable; urgency=medium
+
+  * Calls dh_installinit after dh_systemd_enable so that systemd services are
+    started at install time.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 08 Jan 2015 15:12:13 +0000
+
+openstack-pkg-tools (21) unstable; urgency=medium
+
+  * Fixed mix-up with SYSTEM_USER and SYSTEM_GROUP in pkgos-gen-upstart-job.
+  * Fixed creation of /var/run/${PROJECT_NAME} if using sysv-rc.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 15 Dec 2014 15:53:43 +0800
+
+openstack-pkg-tools (20) unstable; urgency=medium
+
+  * Now using a forking daemon anymore when using systemd. Thanks to Mikaël
+    Cluseau <mcluseau@isi.nc> for working on this cool feature. This also fixes
+    the issue that /var/run/$PROJECT_NAME was not created at boot time, and
+    then the daemon were not started.
+  * Calling dh_systemd_enable correctly when a .service file is generated.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 12 Dec 2014 15:24:43 +0000
+
+openstack-pkg-tools (19) unstable; urgency=medium
+
+  * Using RuntimeDirectory=${PROJECT_NAME} as per advice in #debian-systemd.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 10 Nov 2014 17:28:47 +0000
+
+openstack-pkg-tools (18) unstable; urgency=medium
+
+  * Using /run and not /var/run.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 11 Nov 2014 01:23:13 +0800
+
+openstack-pkg-tools (17) unstable; urgency=medium
+
+  * Make it possible to have no --config-file= argument for the daemon.
+  * Adds a RuntimeDirectory=/var/run/${PROJECT_NAME} in the systemd template,
+    so that /var/run/${PROJECT_NAME} can be created on boot (Closes: #767711).
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 29 Oct 2014 00:31:49 +0800
+
+openstack-pkg-tools (16) unstable; urgency=medium
+
+  * Fix some upstart job generation handling for murano-agent.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 07 Oct 2014 22:59:41 +0800
+
+openstack-pkg-tools (15) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 07 Oct 2014 13:42:53 +0800
+
+openstack-pkg-tools (14) experimental; urgency=medium
+
+  * Adds the possibility to run daemons as root.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 04 Oct 2014 21:42:52 +0800
+
+openstack-pkg-tools (13) experimental; urgency=medium
+
+  * Added init script templating.
+  * Uploading to experimental during the freeze.
+  * Standards-Version is now 3.9.6.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 03 Oct 2014 01:07:53 +0800
+
+openstack-pkg-tools (12) unstable; urgency=medium
+
+  * Now setting-up database with ALTER DATABASE to use UTF8 instead of the dbc
+    thing which didn't work.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 03 Jun 2014 14:48:40 +0800
+
+openstack-pkg-tools (11) unstable; urgency=medium
+
+  * Really fix dbc_{pg,my}sql_createdb_encoding="UTF8".
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 03 Jun 2014 01:30:50 +0800
+
+openstack-pkg-tools (10) unstable; urgency=medium
+
+  * Now using dbc_{pg,my}sql_createdb_encoding="UTF8" when creating dbs.
+  * Standards-Version: is now 3.9.5.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 02 Apr 2014 22:10:33 +0800
+
+openstack-pkg-tools (9) unstable; urgency=medium
+
+  * Fixed keystone endpoint registration for the new keystone command line
+    syntax.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 14 Feb 2014 17:20:34 +0000
+
+openstack-pkg-tools (8) unstable; urgency=low
+
+  * Allow the upstart thing to also work with package.daemon.upstart.in
+    (replaced the cut -d by a sed s/.upstart.in//).
+  * Adds a git show in the gen-orig-xz, to check if the tag exists before
+    creating the orig.tar.xz.
+  * Added functions to automatically configure rabbit_* directives.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 28 Jun 2013 16:18:55 +0800
+
+openstack-pkg-tools (7) unstable; urgency=low
+
+  * Adds a pkgos_safesed function which doesn't put the (eventual) passwords
+    visible using "ps", which makes it safe to use sed for passwords. Then
+    pkgos_inifile uses that function now.
+  * Added a function to remove a [SECTION] in a config file.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 11 Jun 2013 11:58:32 +0800
+
+openstack-pkg-tools (6) unstable; urgency=low
+
+  * Removed the -R flag when doing chown -R /var/lib/<package>.
+  * Extracted the adduser / addgroup function from pkgos_var_user_group as a
+    separate (callable) function.
+  * Bumped standard-version to 3.9.4.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 30 May 2013 23:52:11 +0800
+
+openstack-pkg-tools (5) unstable; urgency=low
+
+  * Uploading to SID.
+  * Split the get-vcs-source: into 3 targets:
+    - fetch-upstream-remote:
+    - gen-orig-xz:
+    - +get-master-branch:
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 10 May 2013 18:14:51 +0800
+
+openstack-pkg-tools (4) experimental; urgency=low
+
+  * Clean-ups of function parameter calling order.
+  * Rewrite of the pkgos_* functions for parsing ini files.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 12 Mar 2013 00:43:02 +0800
+
+openstack-pkg-tools (3) experimental; urgency=low
+
+  [ Thomas Goirand ]
+  * Don't attempt to read anything from the config file if it isn't
+    installed in /etc (in the pkgos_read_admin_creds pkgos.make target).
+
+  [ James Page ]
+  * Fixup handling of d/*.upstart.in to fix build failures
+    downstream in Ubuntu.
+
+ -- Thomas Goirand <zigo@debian.org>  Sat, 02 Feb 2013 11:30:43 +0000
+
+openstack-pkg-tools (2) experimental; urgency=low
+
+  * Now copying the orig.tar.xz in the build-area after creating it.
+  * Now using the debian branch name defined in debian/gbp.conf for
+    get-vcs-source.
+  * Added code to handle auth_url instead of auth_host / auth_port /
+    auth_proto.
+  * Added a workround the fact that DPKG_MAINTSCRIPT_PACKAGE isn't always
+    set (bug in debconf?)
+  * Added a gen-author-list: target.
+  * Sets various debconf questions with priority medium instead of high.
+  * Added gen-upstream-changelog to generate a debian/CHANGELOG from
+    upstream git log.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 20 Dec 2012 09:50:58 +0000
+
+openstack-pkg-tools (1) experimental; urgency=low
+
+  * Initial release.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 16 Nov 2012 14:29:41 +0000

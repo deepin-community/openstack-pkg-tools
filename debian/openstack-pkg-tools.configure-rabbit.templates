@@ -1,0 +1,44 @@
+# ### rabbitmq access configuration ###
+Template: ospt/configure_rabbit
+Type: boolean
+Default: false
+_Description: Configure RabbitMQ access with debconf?
+ OpenStack services need access to a message queue server, defined by the
+ transport_url directive. Please specify whether configuring this should be
+ handled through debconf.
+ .
+ Only access to RabbitMQ is handled, and the RabbitMQ user creation isn't
+ performed. A new RabbitMQ user can be created with the commands:"
+ .
+  - rabbitmqctl add_user openstack PASSWORD
+  - rabbitmqctl set_permissions -p / openstack ".*" ".*" ".*"
+ .
+ Note that the default RabbitMQ guest account cannot be used for remote
+ connections.
+
+Template: ospt/rabbit-host
+Type: string
+Default: localhost
+_Description: IP address of your RabbitMQ host:
+ In order to interoperate with other components of OpenStack, this package
+ needs to connect to a central RabbitMQ server.
+ .
+ Please specify the IP address of that server.
+
+Template: ospt/rabbit-userid
+Type: string
+Default: guest
+_Description: Username for connection to the RabbitMQ server:
+ In order to interoperate with other components of OpenStack, this package
+ needs to connect to a central RabbitMQ server.
+ .
+ Please specify the username used to connect to that RabbitMQ server.
+
+Template: ospt/rabbit-password
+Type: password
+_Description: Password for connection to the RabbitMQ server:
+ In order to interoperate with other components of OpenStack, this package
+ needs to connect to a central RabbitMQ server.
+ .
+ Please specify the password used to connect to that RabbitMQ server.
+

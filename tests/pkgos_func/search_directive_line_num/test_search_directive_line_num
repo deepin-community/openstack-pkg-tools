@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+pkgos_search_directive_line_num example.ini DEFAULT lock_dir
+if [ "${RET}" = 3 ] ; then
+	exit 0
+else
+	echo "pkgos_search_directive_line_num didn't return the right line number"
+	exit 1
+fi

@@ -1,0 +1,81 @@
+# ### service and endpoint registration ###
+Template: ospt/configure_api-endpoint
+Type: boolean
+Default: false
+_Description: Register this service in the Keystone endpoint catalog?
+ Each OpenStack service (each API) must be registered in the Keystone catalog
+ in order to be accessible. This is done using "openstack service create" and
+ "openstack endpoint create". This can be done automatically now.
+ .
+ Note that you will need to have an up and running Keystone server on which to
+ connect using a known admin project name, admin username and password. The
+ admin auth token is not used anymore.
+ .
+ Also, if a service with a matching name is already present in the Keystone
+ catalog, endpoint registration will be aborted.
+
+Template: ospt/api-keystone-address
+Type: string
+_Description: Keystone server address:
+ Please enter the address (IP or resolvable address) of the Keystone server,
+ for creating the new service and endpoints.
+ .
+ Any non-valid ipv4, ipv6 or host address string will abort the endpoint
+ registration.
+
+Template: ospt/api-keystone-proto
+Type: select
+Choices: http, https
+Choices-C: http, https
+Default: http
+_Description: Keystone endpoint protocol:
+
+Template: ospt/api-keystone-admin-username
+Type: string
+Default: admin
+_Description: Keystone admin username:
+ To create the service endpoint, this package needs to know the Admin
+ username, project name, and password, so it can issue commands through the
+ Keystone API.
+
+Template: ospt/api-keystone-admin-project-name
+Type: string
+Default: admin
+_Description: Keystone admin project name:
+ To create the service endpoint, this package needs to know the Admin
+ username, project name, and password, so it can issue commands through the
+ Keystone API.
+
+Template: ospt/api-keystone-admin-password
+Type: password
+_Description: Keystone admin password:
+ To create the service endpoint, this package needs to know the Admin
+ username, project name, and password, so it can issue commands through the
+ Keystone API.
+
+Template: ospt/api-endpoint-address
+Type: string
+_Description: This service endpoint address:
+ Please enter the endpoint address that will be used to contact this service.
+ You can specify either a Fully Qualified Domain Name (FQDN) or an IP address.
+
+Template: ospt/api-endpoint-proto
+Type: select
+Choices: http, https
+Choices-C: http, https
+Default: http
+_Description: This service endpoint protocol:
+
+Template: ospt/api-endpoint-region-name
+Type: string
+Default: regionOne
+_Description: Name of the region to register:
+ OpenStack supports using regions, with each region representing a different
+ location (usually a different data center). Please enter the region name that
+ you wish to use when registering the endpoint.
+ .
+ The region name is usually a string containing only ASCII alphanumerics,
+ dots, and dashes.
+ .
+ A non-valid string will abort the API endpoint registration.
+

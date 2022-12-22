@@ -1,0 +1,15 @@
+build-tools/*				/usr/bin
+debian/openstack-pkg-tools.*.templates	/usr/share/openstack-pkg-tools/debconf-templates
+debian/po				/usr/share/openstack-pkg-tools/debconf-templates
+etc/pkgos/*				/etc/pkgos
+init-template/init-script-template	/usr/share/openstack-pkg-tools
+init-template/pkgos-gen-systemd-unit	/usr/bin
+misc/libdpkg-perl-gitreview.patch	/usr/share/openstack-pkg-tools
+misc/libsbuild-perl-ChrootSetup.pm-hotfix.patch	/usr/share/openstack-pkg-tools
+misc/openstack.profile			/usr/share/lintian/profiles/debian
+misc/pkgos*				/usr/bin
+pkgos.make				/usr/share/openstack-pkg-tools
+pkgos.stdpkg.make			/usr/share/openstack-pkg-tools
+pkgos_func				/usr/share/openstack-pkg-tools
+pkgos_insert_include			/usr/share/openstack-pkg-tools
+pkgos_postrm				/usr/share/openstack-pkg-tools

@@ -1,0 +1,183 @@
+#!/bin/sh
+
+set -e
+set -x
+
+. /etc/pkgos/pkgos.conf
+
+PKG_NAME=${1}
+SUBGROUP=${2}
+
+ARCH=i386 ; if [ `uname -m` = "x86_64" ] ; then ARCH=amd64 ; fi
+if ! [ `whoami` = "root" ] ; then SU=sudo ; fi
+
+#################################
+# Define some utility functions #
+#################################
+# Is the package from the pkgs-js group?
+is_pkg_js () {
+	ISPKGJS="no"
+	for i in $PKG_JS ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISPKGJS="yes"
+		fi
+	done
+}
+
+# Is the package maintained on a debian/<openstack-release-name> branch?
+is_core () {
+	ISCORE="no"
+	for i in $OSTACK_PKGS ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISCORE="yes"
+			return
+		fi
+	done
+}
+
+# Is the package maintained on a debian/experimental branch?
+is_experi () {
+	ISEXPERI="no"
+	for i in ${EXPERIMENTAL_BRANCH} ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISEXPERI="yes"
+			return
+		fi
+	done
+}
+
+is_server () {
+	ISSERVER="no"
+	for i in ${SERVERS} ; do
+		if [ "${i}" = "${PKG_NAME}" ] ; then
+			ISSERVER="yes"
+			return
+		fi
+	done
+}
+
+# Get some version information out of the debian/changelog last entry
+get_deb_version() {
+	PKG_NAME=`dpkg-parsechangelog -SSource`
+	DEB_VERS=`dpkg-parsechangelog -SVersion`
+	NO_EPOC=`echo ${DEB_VERS} | cut -d":" -f2`
+	if echo ${DEB_VERS} | grep -q ':' ; then
+		EPOC=`echo ${DEB_VERS} | cut -d":" -f1`
+	fi
+	UPSTREAM_VERS=`echo ${NO_EPOC} | cut -d"-" -f1`
+	if [ "${DEB_VERS}" = "${UPSTREAM_VERS}" ] ; then IS_NATIVE="yes" ; else IS_NATIVE="no" ; fi
+	ORIG=${PKG_NAME}_${UPSTREAM_VERS}.orig.tar.xz
+	CHANGE=${PKG_NAME}_${NO_EPOC}_${ARCH}.changes
+	PKG_NAME_FIRST_CHAR=`echo ${PKG_NAME} | awk '{print substr($0,1,1)}'`
+}
+
+##############################
+# Start of the actual script #
+##############################
+MY_CWD=`pwd`
+
+# Go in the build dir and make sure it's cleaned
+BUILD_ROOT=/var/lib/jenkins/jobs/${PKG_NAME}/builds/${BUILD_NUMBER}
+rm -rf ${BUILD_ROOT}/$PKG_NAME
+mkdir -p ${BUILD_ROOT}/$PKG_NAME
+cd ${BUILD_ROOT}/$PKG_NAME
+
+# "git clone" the package from the correct repo (either pkg-javascript or openstack)
+is_pkg_js
+if [ "${ISPKGJS}" = "yes" ] ; then
+	git clone ${CLONE_URL_PKGJS}/${PKG_NAME}.git
+else
+	if [ -n "${SUBGROUP}" ] ; then
+		git clone ${CLONE_URL_BASE}/${SUBGROUP}/${PKG_NAME}.git
+	else
+		git clone ${CLONE_URL_BASE}/${PKG_NAME}.git
+	fi
+fi
+cd $PKG_NAME
+
+# Checkout the correct branch(es) before building
+PRIS=$(grep pristine-tar debian/gbp.conf | awk '{print $1}')
+if [ "${PRIS}" = "pristine-tar" ] ; then
+	PRIS_VAL=$(grep pristine-tar debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
+	if [ "${PRIS_VAL}" = "False" ] ; then
+		PRIS="none"
+	fi
+fi
+if [ "${PRIS}" = "pristine-tar" ] ; then
+	# Guess the upstream-branch and debian-branch reading gbp.conf
+	PRIS_UPSTREAM_BRANCH=$(grep upstream-branch debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
+	PRIS_DEBIAN_BRANCH=$(grep debian-branch debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
+
+	# If it's a pristine-tar package, checkout the pristine-tar and upstream-unstable branches
+	git checkout -b pristine-tar origin/pristine-tar
+	git checkout -b ${PRIS_UPSTREAM_BRANCH} origin/${PRIS_UPSTREAM_BRANCH}
+	is_experi
+	if [ "${ISEXPERI}" = "yes" ] ; then
+		git checkout -b debian-experimental origin/debian-experimental
+	else
+		git checkout ${PRIS_DEBIAN_BRANCH}
+	fi
+	get_deb_version
+else
+	is_core
+	if [ "${ISCORE}" = "yes" ] ; then
+		# If it's a core package, listed in OSTACK_PKGS in /etc/pkgos/pkgos.conf
+		# then we use debian/juno, debian/kilo, etc. as packaging branch.
+		git checkout -b debian/${TARGET_OPENSTACK_REL} origin/debian/${TARGET_OPENSTACK_REL} || true
+
+		if [ "${BUILD_FROM_TRUNK}" = "yes" ] ; then
+			is_server
+			if [ "${ISSERVER}" = "yes" ] ; then
+				# Get the master branch
+				./debian/rules get-master-branch
+				git checkout master
+
+				# Calculate a new tag
+				GIT_SHA256_FULL=`git log | head -n1 | cut -d' ' -f2`
+				GIT_SHA256=`echo ${GIT_SHA256_FULL} | awk '{print substr($0,0,10)}'`
+				DATETIME=`date +%F | sed s/-/./g`.`date +%T | sed s/:/./g`
+				UPSTREAM_NEW_TAG=`echo ${UPSTREAM_VERS} | sed s/~/_/`+git${DATETIME}.${GIT_SHA256}
+				UPSTREAM_NEW_VERSION=${UPSTREAM_VERS}+git${DATETIME}.${GIT_SHA256}
+
+				# Tag it
+				git tag ${UPSTREAM_NEW_TAG}
+
+				# Get back to our original Debian packaging branch, merge the tag
+				git checkout -b debian/${TARGET_OPENSTACK_REL}
+				git merge -X theirs ${UPSTREAM_NEW_TAG}
+
+				# and fix the debian/changelog with a new entry
+				if [ -n "${EPOC}" ] ; then
+					NEW_DEBVERSION="${EPOC}:"
+				fi
+				NEW_DEBVERSION=${NEW_DEBVERSION}${UPSTREAM_NEW_VERSION}-1
+				dch --newversion ${NEW_DEBVERSION} -b --allow-lower-version --distribution unstable -m "New upstream release based on commit ${GIT_SHA256_FULL}."
+				git commit debian/changelog -m "New upstream release based on commit ${GIT_SHA256_FULL}."
+			fi
+		fi
+	else
+		# If it's listed as EXPERIMENTAL_BRANCH in /etc/pkgos/pkgos.conf, then we
+		# use debian/experimental branch.
+		is_experi
+		if [ "${ISEXPERI}" = "yes" ] ; then
+			CURBRANCH=`git branch | grep '*' | cut -d' ' -f2`
+			if [ "${CURBRANCH}" = "debian/experimental" ] ; then
+				echo "Already on debian/experimental"
+			else
+				git checkout -b debian/experimental origin/debian/experimental
+			fi
+		else
+			git checkout debian/${TARGET_OPENSTACK_REL} || true
+#			git checkout -b ${DEBIAN_BRANCH} origin/${DEBIAN_BRANCH} || true
+		fi
+	fi
+	get_deb_version
+	# Generate the .orig.tar.xz using git archive...
+	if [ "${IS_NATIVE}" = "no" ] ; then
+		./debian/rules gen-orig-xz
+	fi
+fi
+
+# Build the package using sbuild (see that script, which can be used
+# in your own laptop if you don't want to use jenkins...)
+pkgos-bop

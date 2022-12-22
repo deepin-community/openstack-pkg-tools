@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp example-after-old-existing.ini example-result.ini
+pkgos_deprecate_directive example-result.ini old_section old_directive new_section new_directive
+osstt_assertFilesAreSame example-result.ini example-after-old-existing.ini
+#rm example-result.ini
+if [ "${RET}" = "yes" ] ; then
+	exit 0
+else
+	echo "pkgos_deprecate_directive did something on an already valid file"
+	exit 1
+fi

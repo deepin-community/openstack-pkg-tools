@@ -1,0 +1,504 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# victory <victory.deb@gmail.com>, 2012.
+#
+# Takuma Yamada <tyamada@takumayamada.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: glance\n"
+"Report-Msgid-Bugs-To: openstack-pkg-tools@packages.debian.org\n"
+"POT-Creation-Date: 2019-10-10 18:44+0200\n"
+"PO-Revision-Date: 2016-04-07 12:35+0900\n"
+"Last-Translator: Takuma Yamada <tyamada@takumayamada.com>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Gtranslator 2.91.6\n"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid "Set up a database for Glance?"
+msgid "Set up a database for this package?"
+msgstr "Glance 用のデータベースを設定しますか?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| "No database has been set up for glance-registry or glance-api to use. "
+#| "Before continuing, you should make sure you have the following "
+#| "information:"
+msgid ""
+"No database has been set up for this package. Before continuing, you should "
+"make sure you have the following information:"
+msgstr ""
+"glance-registry または glance-api が使用するデータベースが設定されていませ"
+"ん。続行する前に、以下の情報が揃っていることを確認する必要があります:"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| " * the type of database that you want to use;\n"
+#| " * the database server hostname (that server must allow TCP connections "
+#| "from this\n"
+#| "   machine);\n"
+#| " * a username and password to access the database."
+msgid ""
+" * the type of database that you want to use - generally the MySQL backend\n"
+"   (which is compatible with MariaDB) is a good choice, and other\n"
+"   implementations like PostgreSQL or SQLite are often problematic with\n"
+"   OpenStack (this depends on the service);\n"
+" * the database server hostname (that server must allow TCP connections "
+"from\n"
+"   this machine);\n"
+" * a username and password to access the database."
+msgstr ""
+" * 使いたいデータベースの種類\n"
+" * データベースサーバのホスト名 (そのサーバは、このマシンからの TCP 接続を\n"
+"   許可する必要があります)\n"
+" * データベースにアクセスするためのユーザ名とパスワード"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+"Note that if you plan on using a remote database server, you must first "
+"configure dbconfig-common to do so (using dpkg-reconfigure dbconfig-common), "
+"and the remote database server needs to be configured with adequate "
+"credentials."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| "If some of these requirements are missing, do not choose this option and "
+#| "run with regular SQLite support."
+msgid ""
+"If some of these requirements are missing, do not choose this option. Run "
+"with regular SQLite support instead."
+msgstr ""
+"必要な情報が不足している場合は、このオプションを選択しないで、標準の SQLite "
+"サポートで実行します。"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+#, fuzzy
+#| msgid ""
+#| "You can change this setting later on by running \"dpkg-reconfigure -plow "
+#| "glance-common\"."
+msgid ""
+"You can change this setting later on by running \"dpkg-reconfigure -plow\"."
+msgstr ""
+"この設定は、後で \"dpkg-reconfigure -plow glance-common\" を実行することで変"
+"更できます。"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:1001
+msgid "Manage keystone_authtoken with debconf?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:1001
+msgid ""
+"Every OpenStack service must contact Keystone, and this is configured "
+"through the [keystone_authtoken] section of the configuration. Specify if "
+"you wish to handle this configuration through debconf."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:2001
+#, fuzzy
+#| msgid "Authentication server username:"
+msgid "Auth server public endpoint URL:"
+msgstr "認証サーバのユーザ名:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:2001
+msgid ""
+"Specify the URL of your Keystone authentication server public endpoint. This "
+"value will be set in the www_authenticate_uri directive."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+#, fuzzy
+#| msgid "Keystone admin name:"
+msgid "Keystone region:"
+msgstr "Keystone 管理者名:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+msgid "Specify the Keystone region to use."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid ""
+"The region name is usually a string containing only ASCII alphanumerics, "
+"dots, and dashes."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:4001
+msgid "Create service user?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:4001
+msgid ""
+"This package can reuse an already existing username, or create one right "
+"now. If you wish to create one, then you will be prompted for the admin "
+"credentials."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:5001
+#, fuzzy
+#| msgid "Authentication server username:"
+msgid "Auth server admin username:"
+msgstr "認証サーバのユーザ名:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:6001
+#, fuzzy
+#| msgid "Keystone admin project name:"
+msgid "Auth server admin project name:"
+msgstr "Keystone 管理プロジェクト名:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:7001
+#, fuzzy
+#| msgid "Authentication server password:"
+msgid "Auth server admin password:"
+msgstr "認証サーバのパスワード:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:8001
+#, fuzzy
+#| msgid "Authentication server username:"
+msgid "Auth server service username:"
+msgstr "認証サーバのユーザ名:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:9001
+#, fuzzy
+#| msgid "Authentication server username:"
+msgid "Auth server service project name:"
+msgstr "認証サーバのユーザ名:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:10001
+#, fuzzy
+#| msgid "Authentication server password:"
+msgid "Auth server service password:"
+msgstr "認証サーバのパスワード:"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid "Configure RabbitMQ access with debconf?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"OpenStack services need access to a message queue server, defined by the "
+"transport_url directive. Please specify whether configuring this should be "
+"handled through debconf."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"Only access to RabbitMQ is handled, and the RabbitMQ user creation isn't "
+"performed. A new RabbitMQ user can be created with the commands:\""
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+" - rabbitmqctl add_user openstack PASSWORD\n"
+" - rabbitmqctl set_permissions -p / openstack \".*\" \".*\" \".*\""
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"Note that the default RabbitMQ guest account cannot be used for remote "
+"connections."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+msgid "IP address of your RabbitMQ host:"
+msgstr "RabbitMQ ホストの IP アドレス:"
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid ""
+"In order to interoperate with other components of OpenStack, this package "
+"needs to connect to a central RabbitMQ server."
+msgstr ""
+"OpenStack のほかのコンポーネントと相互運用するためには、このパッケージは中央"
+"RabbitMQ サーバに接続する必要があります。"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+msgid "Please specify the IP address of that server."
+msgstr "そのサーバの IP アドレスを指定してください。"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+msgid "Username for connection to the RabbitMQ server:"
+msgstr "RabbitMQ サーバに接続するためのユーザ名:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+#, fuzzy
+#| msgid "Please specify the username used to connect to the RabbitMQ server."
+msgid "Please specify the username used to connect to that RabbitMQ server."
+msgstr "RabiitMQ サーバに接続するときに使うユーザ名を指定してください。"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid "Password for connection to the RabbitMQ server:"
+msgstr "RabbitMQ サーバに接続するためのパスワード:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+#, fuzzy
+#| msgid "Please specify the password used to connect to the RabbitMQ server."
+msgid "Please specify the password used to connect to that RabbitMQ server."
+msgstr "RabbitMQ サーバに接続するときに使うパスワードを指定してください。"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+#, fuzzy
+#| msgid "Register Glance in the Keystone endpoint catalog?"
+msgid "Register this service in the Keystone endpoint catalog?"
+msgstr "Glance を Keystone のエンドポイントカタログに登録しますか?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+#, fuzzy
+#| msgid ""
+#| "Each OpenStack service (each API) should be registered in order to be "
+#| "accessible. This is done using \"keystone service-create\" and \"keystone "
+#| "endpoint-create\". This can be done automatically now."
+msgid ""
+"Each OpenStack service (each API) must be registered in the Keystone catalog "
+"in order to be accessible. This is done using \"openstack service create\" "
+"and \"openstack endpoint create\". This can be done automatically now."
+msgstr ""
+"各 OpenStack サービス (各 API) は、アクセス可能にするために登録する必要があり"
+"ます。\"keystone service-create\" と \"keystone endpoint-create\" を使って登"
+"録することができます。ここで自動的に行うことができます。"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Note that you will need to have an up and running Keystone server on which "
+"to connect using a known admin project name, admin username and password. "
+"The admin auth token is not used anymore."
+msgstr ""
+"既知の管理プロジェクト名、管理者のユーザ名とパスワードを使用して接続するに"
+"は、Keystone サーバの起動および実行が必要になりますので注意してください。管理"
+"者認証トークンはもう使用されていません。"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Also, if a service with a matching name is already present in the Keystone "
+"catalog, endpoint registration will be aborted."
+msgstr ""
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+#, fuzzy
+#| msgid "Keystone server IP address:"
+msgid "Keystone server address:"
+msgstr "Keystone サーバの IP アドレス:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+#, fuzzy
+#| msgid ""
+#| "Please enter the IP address of the Keystone server, so that glance-api "
+#| "can contact Keystone to do the Glance service and endpoint creation."
+msgid ""
+"Please enter the address (IP or resolvable address) of the Keystone server, "
+"for creating the new service and endpoints."
+msgstr ""
+"Keystone サーバの IP アドレスを入力してください。それにより glance-api は "
+"Keystone と通信し、Glance サービスやエンドポイントの作成ができるようになりま"
+"す。"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid ""
+"Any non-valid ipv4, ipv6 or host address string will abort the endpoint "
+"registration."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:3001
+#, fuzzy
+#| msgid "Keystone admin project name:"
+msgid "Keystone endpoint protocol:"
+msgstr "Keystone 管理プロジェクト名:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:4001
+#, fuzzy
+#| msgid "Keystone admin name:"
+msgid "Keystone admin username:"
+msgstr "Keystone 管理者名:"
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:4001
+#: ../openstack-pkg-tools.configure-endpoint.templates:5001
+#: ../openstack-pkg-tools.configure-endpoint.templates:6001
+#, fuzzy
+#| msgid ""
+#| "To register the service endpoint, this package needs to know the Admin "
+#| "login, name, project name, and password to the Keystone server."
+msgid ""
+"To create the service endpoint, this package needs to know the Admin "
+"username, project name, and password, so it can issue commands through the "
+"Keystone API."
+msgstr ""
+"サービスのエンドポイントを登録するには、このパッケージが Keystone サーバへの"
+"管理者ログイン、名前、プロジェクト名、およびパスワードを知っている必要があり"
+"ます。"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:5001
+msgid "Keystone admin project name:"
+msgstr "Keystone 管理プロジェクト名:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:6001
+msgid "Keystone admin password:"
+msgstr "Keystone 管理者パスワード:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:7001
+#, fuzzy
+#| msgid "Glance endpoint IP address:"
+msgid "This service endpoint address:"
+msgstr "Glance エンドポイントの IP アドレス:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:7001
+#, fuzzy
+#| msgid "Please enter the IP address that will be used to contact Glance."
+msgid ""
+"Please enter the endpoint address that will be used to contact this service. "
+"You can specify either a Fully Qualified Domain Name (FQDN) or an IP address."
+msgstr "Glance との通信に使用される IP アドレスを入力してください。"
+
+#. Type: select
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:8001
+#, fuzzy
+#| msgid "Glance endpoint IP address:"
+msgid "This service endpoint protocol:"
+msgstr "Glance エンドポイントの IP アドレス:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid "Name of the region to register:"
+msgstr "登録するリージョンの名前:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+#, fuzzy
+#| msgid ""
+#| "OpenStack supports using availability zones, with each region "
+#| "representing a location. Please enter the zone that you wish to use when "
+#| "registering the endpoint."
+msgid ""
+"OpenStack supports using regions, with each region representing a different "
+"location (usually a different data center). Please enter the region name "
+"that you wish to use when registering the endpoint."
+msgstr ""
+"OpenStack は、場所を示すリージョン毎に、アベイラビリティーゾーンの使用をサ"
+"ポートします。エンドポイントを登録する際に、使用するゾーンを入力してくださ"
+"い。"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid "A non-valid string will abort the API endpoint registration."
+msgstr ""
+
+#, fuzzy
+#~| msgid "Keystone admin project name:"
+#~ msgid "Auth server admin endpoint URL:"
+#~ msgstr "Keystone 管理プロジェクト名:"

@@ -1,0 +1,60 @@
+# ### keystone_authtoken configuration ###
+# ksat stands for keystone authtoken
+Template: ospt/configure_ksat
+Type: boolean
+Default: false
+_Description: Manage keystone_authtoken with debconf?
+ Every OpenStack service must contact Keystone, and this is configured through
+ the [keystone_authtoken] section of the configuration. Specify if you wish to
+ handle this configuration through debconf.
+
+Template: ospt/ksat-public-url
+Type: string
+Default: http://localhost:5000
+_Description: Auth server public endpoint URL:
+ Specify the URL of your Keystone authentication server public endpoint. This
+ value will be set in the www_authenticate_uri directive.
+
+Template: ospt/ksat-region
+Type: string
+Default: regionOne
+_Description: Keystone region:
+ Specify the Keystone region to use.
+ .
+ The region name is usually a string containing only ASCII alphanumerics,
+ dots, and dashes.
+
+Template: ospt/ksat-create-service-user
+Type: boolean
+Default: true
+_Description: Create service user?
+ This package can reuse an already existing username, or create one right now.
+ If you wish to create one, then you will be prompted for the admin credentials.
+
+Template: ospt/ksat-admin-username
+Type: string
+Default: admin
+_Description: Auth server admin username:
+
+Template: ospt/ksat-admin-project-name
+Type: string
+Default: admin
+_Description: Auth server admin project name:
+
+Template: ospt/ksat-admin-password
+Type: password
+_Description: Auth server admin password:
+
+Template: ospt/ksat-service-username
+Type: string
+_Description: Auth server service username:
+
+Template: ospt/ksat-service-project-name
+Type: string
+Default: service
+_Description: Auth server service project name:
+
+Template: ospt/ksat-service-password
+Type: password
+_Description: Auth server service password:
+

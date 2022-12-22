@@ -1,0 +1,1152 @@
+#!/bin/sh
+# -*- mode: shell-script -*-
+
+pkgos_gen_pass () {
+	i=$(dd if=/dev/random bs=64 count=1 2>|/dev/null | md5sum)
+	echo ${i% *}
+}
+
+# This function removes a section, because we need that in the case
+# of an upgrade from one version to the next. It is for example
+# needed for keystone to upgrade from Grizzly to Havana.
+# Params:
+#    $1 Init file path
+#    $2 Section to remove
+pkgos_remove_section () {
+	local REMOVESEC_INIFILE REMOVESEC_SEARCH_SECTION REMOVESEC_INIFILE_CNT REMOVESEC_LINE REMOVESEC_FOUND_SECTION REMOVESEC_START_LINE REMOVESEC_END_LINE
+	REMOVESEC_INIFILE=${1}
+	REMOVESEC_SEARCH_SECTION=${2}
+	if [ ! -r ${REMOVESEC_INIFILE} ] ; then return ; fi
+
+	# Iterate through all lines of the file to search for section start/end line number
+	REMOVESEC_INIFILE_CNT=0
+	REMOVESEC_FOUND_SECTION=""
+	REMOVESEC_START_LINE=""
+	REMOVESEC_END_LINE=""
+	while read REMOVESEC_LINE ; do
+		REMOVESEC_INIFILE_CNT=$((${REMOVESEC_INIFILE_CNT} + 1 ))
+		if echo ${REMOVESEC_LINE} | grep -q '^[ \t]*\[.*\][ \t]*$' ; then
+			REMOVESEC_FOUND_SECTION=`echo ${REMOVESEC_LINE} | sed -e 's/\[//' | sed -e 's/\]//'`
+			if [ "${REMOVESEC_FOUND_SECTION}" = "${REMOVESEC_SEARCH_SECTION}" ] ; then
+				REMOVESEC_START_LINE=$(( ${REMOVESEC_INIFILE_CNT} - 1 ))
+			else
+				if [ -n "${REMOVESEC_START_LINE}" ] && [ -z "${REMOVESEC_END_LINE}" ] ; then
+					REMOVESEC_END_LINE=$(( ${REMOVESEC_INIFILE_CNT} -1 ))
+				fi
+			fi
+		fi
+	done < ${REMOVESEC_INIFILE}
+
+
+	# Case where the section is last in the file
+	if [ -n "${REMOVESEC_START_LINE}" ] && [ -z "${REMOVESEC_END_LINE}" ] ; then
+		REMOVESEC_END_LINE=${REMOVESEC_INIFILE_CNT}
+	fi
+
+	# Section found, remove it!
+	if [ -n "${REMOVESEC_START_LINE}" ] && [ -n "${REMOVESEC_END_LINE}" ] ; then
+		REMOVESEC_CONF_LINES_NUM=`wc -l ${REMOVESEC_INIFILE} | cut -d" " -f1`
+		REMOVESEC_CUT_END=$((${REMOVESEC_CONF_LINES_NUM} - ${REMOVESEC_END_LINE} ))
+		REMOVESEC_TMPFILE=`mktemp -t pkgos_removesec.XXXXXX`
+		head -n ${REMOVESEC_START_LINE} ${REMOVESEC_INIFILE} >${REMOVESEC_TMPFILE}
+		tail -n ${REMOVESEC_CUT_END} ${REMOVESEC_INIFILE} >>${REMOVESEC_TMPFILE}
+		cat <${REMOVESEC_TMPFILE} >${REMOVESEC_INIFILE}
+		rm ${REMOVESEC_TMPFILE}
+	fi
+}
+
+# This function extract a section from a configuration file,
+# write it to a destination file, and rewrite the original
+# file without the extracted section.
+# This is useful, for example, in Nova, to extract the
+# [database] section to write a nova-db.conf.
+pkgos_extract_section () {
+	local EXTRACTSEC_ORIG_CONF_FILE EXTRACTSEC_DEST_CONF_FILE EXTRACTSEC_SECTION_NAME EXTRACTSEC_SEC_START EXTRACTSEC_ORIG_NUM_LINE EXTRACTSEC_BEG_ORIG EXTRACTSEC_NO_BEG_ORIG EXTRACTSEC_TOWARD_END_LENGHT EXTRACTSEC_SEC_LENGHT
+	EXTRACTSEC_ORIG_CONF_FILE=${1}
+	EXTRACTSEC_DEST_CONF_FILE=${2}
+	EXTRACTSEC_SECTION_NAME=${3}
+
+	EXTRACTSEC_SEC_START=$(grep -n '^\['${EXTRACTSEC_SECTION_NAME}'\]$' ${EXTRACTSEC_ORIG_CONF_FILE} | cut -d: -f1)
+	EXTRACTSEC_ORIG_NUM_LINE=$(cat ${EXTRACTSEC_ORIG_CONF_FILE} | wc -l)
+	
+	# Copy the begining of the conf file up to the begining of the section to extract
+	EXTRACTSEC_BEG_ORIG=$(mktemp $0.XXXXXX)
+	head -n $((${EXTRACTSEC_SEC_START} - 1)) ${EXTRACTSEC_ORIG_CONF_FILE} >${EXTRACTSEC_BEG_ORIG}
+
+	# Copy the remaining of the file
+	EXTRACTSEC_NO_BEG_ORIG=$(mktemp $0.XXXXXX)
+	tail -n $((${EXTRACTSEC_ORIG_NUM_LINE} - ${EXTRACTSEC_SEC_START})) ${EXTRACTSEC_ORIG_CONF_FILE} >${EXTRACTSEC_NO_BEG_ORIG}
+
+	# Total lenght of the remaining of the file
+	EXTRACTSEC_TOWARD_END_LENGHT=$(cat ${EXTRACTSEC_NO_BEG_ORIG} | wc -l)
+
+	# How many lines in the section to extract?
+	EXTRACTSEC_SEC_LENGHT=$(grep -n -E '^\[[_a-zA-Z0-9-]*\]$' ${EXTRACTSEC_NO_BEG_ORIG} | head -n 1 | cut -d: -f1)
+
+	# Copy the section to extract to dest file
+	echo '['${EXTRACTSEC_SECTION_NAME}']' >${EXTRACTSEC_DEST_CONF_FILE}
+	head -n $(( ${EXTRACTSEC_SEC_LENGHT} - 1 )) ${EXTRACTSEC_NO_BEG_ORIG} >>${EXTRACTSEC_DEST_CONF_FILE}
+
+	# Copy the begining of the file to orig file
+	cat ${EXTRACTSEC_BEG_ORIG} >${EXTRACTSEC_ORIG_CONF_FILE}
+
+	# Append the remaining of the file
+	tail -n $((${EXTRACTSEC_TOWARD_END_LENGHT} - ${EXTRACTSEC_SEC_LENGHT} + 1 )) ${EXTRACTSEC_NO_BEG_ORIG} >>${EXTRACTSEC_ORIG_CONF_FILE}
+	rm -f ${EXTRACTSEC_BEG_ORIG} ${EXTRACTSEC_NO_BEG_ORIG}
+}
+
+# This function lookup if a directive exists in a section. If it doesn't
+# then it will add it there, with the specified comment.
+pkgos_add_directive () {
+	local ADDDIRECTIVE_CONF_FILE ADDDIRECTIVE_SECTION ADDDIRECTIVE_DIRECTIVE ADDDIRECTIVE_COMMENT ADDDIRECTIVE_TOT_NUM_LINES ADDDIRECTIVE_SECTION_START ADDDIRECTIVE_UNTIL_END_FILE ADDDIRECTIVE_TMP_FILE ADDDIRECTIVE_VALUE
+	ADDDIRECTIVE_CONF_FILE=${1}
+	ADDDIRECTIVE_SECTION=${2}
+	ADDDIRECTIVE_DIRECTIVE=${3}
+	ADDDIRECTIVE_COMMENT=${4}
+	ADDDIRECTIVE_VALUE=${5}
+
+	pkgos_search_directive_line_num ${ADDDIRECTIVE_CONF_FILE} ${ADDDIRECTIVE_SECTION} ${ADDDIRECTIVE_DIRECTIVE}
+
+	if [ "${RET}" = "NOT_FOUND" ] ; then
+		# Calculate section start and end line
+		ADDDIRECTIVE_TOT_NUM_LINES=$(cat ${ADDDIRECTIVE_CONF_FILE} | wc -l)
+		ADDDIRECTIVE_SECTION_START=$(grep -n -E '^[ \t]*\['${ADDDIRECTIVE_SECTION}'\][ \t]*' ${ADDDIRECTIVE_CONF_FILE} | cut -d: -f1)
+		ADDDIRECTIVE_UNTIL_END_FILE=$((${ADDDIRECTIVE_TOT_NUM_LINES} - ${ADDDIRECTIVE_SECTION_START}))
+		ADDDIRECTIVE_TMP_FILE=$(mktemp pkgos_add_directive.XXXXXX)
+		head -n ${ADDDIRECTIVE_SECTION_START} ${ADDDIRECTIVE_CONF_FILE} >${ADDDIRECTIVE_TMP_FILE}
+		echo ${ADDDIRECTIVE_COMMENT} >>${ADDDIRECTIVE_TMP_FILE}
+		if [ -n "${ADDDIRECTIVE_VALUE}" ] ; then
+			echo "${ADDDIRECTIVE_DIRECTIVE} ${ADDDIRECTIVE_VALUE}" >>${ADDDIRECTIVE_TMP_FILE}
+		else
+			echo "#${ADDDIRECTIVE_DIRECTIVE}" >>${ADDDIRECTIVE_TMP_FILE}
+		fi
+		echo "" >>${ADDDIRECTIVE_TMP_FILE}
+		tail -n ${ADDDIRECTIVE_UNTIL_END_FILE} ${ADDDIRECTIVE_CONF_FILE} >>${ADDDIRECTIVE_TMP_FILE}
+		cp ${ADDDIRECTIVE_TMP_FILE} ${ADDDIRECTIVE_CONF_FILE}
+		rm ${ADDDIRECTIVE_TMP_FILE}
+	fi
+}
+
+# This function lookup if an old directive is set in a configuration file,
+# if so, it picks-up its value, then set the new directive with the value
+# found in the old one. If the new directive doesn't exist, it adds it to
+# the configuration file.
+# Params:
+#    $1 config_file
+pkgos_deprecate_directive () {
+	local DEPRECATE_CONF_FILE DEPRECATE_OLD_SECTION DEPRECATE_OLD_DIRECTIVE DEPRECATE_NEW_SECTION DEPRECATE_NEW_DIRECTIVE DEPRECATE_VALUE DEPRECATE_LINE_NUM
+	DEPRECATE_CONF_FILE=${1}
+	DEPRECATE_OLD_SECTION=${2}
+	DEPRECATE_OLD_DIRECTIVE=${3}
+	DEPRECATE_NEW_SECTION=${4}
+	DEPRECATE_NEW_DIRECTIVE=${5}
+
+	pkgos_inifile get ${DEPRECATE_CONF_FILE} ${DEPRECATE_OLD_SECTION} ${DEPRECATE_OLD_DIRECTIVE}
+	DEPRECATE_VALUE=${RET}
+	if [ "${RET}" = "NOT_FOUND" ] || [ "${RET}" = "" ] ; then
+		return
+	fi
+	pkgos_comment_out_directive ${DEPRECATE_CONF_FILE} ${DEPRECATE_OLD_SECTION} ${DEPRECATE_OLD_DIRECTIVE}
+	pkgos_inifile set ${DEPRECATE_CONF_FILE} ${DEPRECATE_NEW_SECTION} ${DEPRECATE_NEW_DIRECTIVE} ${DEPRECATE_VALUE}
+}
+
+# This comments out a directive if it is not commented.
+# Params: $1 config_file
+#         $2 section
+#         $3 directive
+pkgos_comment_out_directive () {
+	local COMMENT_OUT_CONF_FILE COMMENT_OUT_SECTION COMMENT_OUT_DIRECTIVE COMMENT_OUT_LINE_NUM
+	COMMENT_OUT_CONF_FILE=${1}
+	COMMENT_OUT_SECTION=${2}
+	COMMENT_OUT_DIRECTIVE=${3}
+
+	pkgos_search_directive_line_num ${COMMENT_OUT_CONF_FILE} ${COMMENT_OUT_SECTION} ${COMMENT_OUT_DIRECTIVE}
+	COMMENT_OUT_LINE_NUM=${RET}
+	if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+		sed -i ${COMMENT_OUT_LINE_NUM}'s|^'${COMMENT_OUT_DIRECTIVE}'|#'${COMMENT_OUT_DIRECTIVE}'|' ${COMMENT_OUT_CONF_FILE}
+	fi
+}
+
+# Using sed to set passwords with arguments on the command line makes
+# it possible to see the new passwords using ps. This function creates
+# a temp file which is used as a script for sed (using the -f option).
+# This is safe because what's put in the file is done with echo, which
+# is a built-in shell command, so it will not appear in /proc.
+# Params:
+#    $1 Sed script to replace values in a config file
+#    $2 Config file to change
+pkgos_safesed () {
+	local SAFESED_SCRIPT SAFESED_CONFIG_FILENAME SAFESED_TMPFILE
+	SAFESED_SCRIPT=${1}
+	SAFESED_CONFIG_FILENAME=${2}
+
+	SAFESED_TMPFILE=`mktemp -t pkgos_safe_sed.XXXXXX`
+	echo "${SAFESED_SCRIPT}" >${SAFESED_TMPFILE}
+	sed -i -f ${SAFESED_TMPFILE} ${SAFESED_CONFIG_FILENAME}
+	rm ${SAFESED_TMPFILE}
+}
+
+# Param: $1 conf file
+#        $2 section
+#        $3 directive
+pkgos_search_directive_line_num () {
+	local CONF_FILE SECTION DIRECTIVE TOT_NUM_LINES
+	CONF_FILE=${1}
+	SECTION=${2}
+	DIRECTIVE=${3}
+
+	# Check if file is readable
+	if ! [ -r ${CONF_FILE} ] ; then
+		RET=NOT_FOUND
+		return
+	fi
+	# Check if section exists
+	if ! grep -q -E '^[ \t]*\['${SECTION}'\][ \t]*$' ${CONF_FILE} ; then
+		RET=NOT_FOUND
+		return
+	fi
+
+	# Calculate section start and end line
+	TOT_NUM_LINES=$(cat ${CONF_FILE} | wc -l)
+	SECTION_START=$(grep -n -E '^[ \t]*\['${SECTION}'\][ \t]*' ${CONF_FILE} | cut -d: -f1)
+	UNTIL_END_FILE=$((${TOT_NUM_LINES} - ${SECTION_START}))
+	SECTION_NUM_LINES=$(( $(tail -n ${UNTIL_END_FILE} ${CONF_FILE} | grep -n -E '^\[' | head -n 1 | cut -d: -f1) - 1))
+	if [ $SECTION_NUM_LINES = -1 ] ; then
+		SECTION_NUM_LINES=$UNTIL_END_FILE
+	fi
+	# First search for an uncommented line
+	if tail -n ${UNTIL_END_FILE} ${CONF_FILE} | head -n ${SECTION_NUM_LINES} | grep -q '^[ \t]*'${DIRECTIVE}'[ \t]*[=\:][ \t]*' ; then
+		DIR_LINE_IN_SEC=$(tail -n ${UNTIL_END_FILE} ${CONF_FILE} | head -n ${SECTION_NUM_LINES} | grep -n '^[ \t]*'${DIRECTIVE}'[ \t]*[=\:][ \t]*' | head -n 1 | cut -d: -f1)
+		RET=$((${SECTION_START} + ${DIR_LINE_IN_SEC}))
+	else
+		# If not found, search for a commented version
+		if ! tail -n ${UNTIL_END_FILE} ${CONF_FILE} | head -n ${SECTION_NUM_LINES} | grep -q '^[#; \t]*'${DIRECTIVE}'[ \t]*[=\:][ \t]*' ; then
+			RET=NOT_FOUND
+			return
+		fi
+		DIR_LINE_IN_SEC=$(tail -n ${UNTIL_END_FILE} ${CONF_FILE} | head -n ${SECTION_NUM_LINES} | grep -n '^[#; \t]*'${DIRECTIVE}'[ \t]*[=\:][ \t]*' | head -n 1 | cut -d: -f1)
+		RET=$((${SECTION_START} + ${DIR_LINE_IN_SEC}))
+	fi
+
+}
+
+# Params: $1 = set or get (set means read mode and return a directive value, get means write a new value in it)
+#         $2 = config file path (example: /etc/nova/nova.conf)
+#         $3 = .ini file section (example: DEFAULT)
+#         $4 = directive name (example: sql_connection)
+#         $5 = only present in "set" mode: new value to replace in the .ini file
+# Note that if $3 = NO_SECTION, then get or set mode will not manage sections at all,
+# and will totally ignore the sections in the .ini file.
+#
+# Example (get the value of keystone hostname in your Nova box):
+# parse_ini_file /etc/nova/api-paste.ini filter:authtoken auth_host
+#
+# Returns: $RET: either NOT_FOUND, or the (previous, in the case of set) value of the searched directive
+pkgos_inifile () {
+	local INIFILE_SHELL_INCLUDE INIFILE_ACCESS_MODE INIFILE_MYCONFIG INIFILE_SEARCH_SECTION SEARCH_DIRECTIVE INIFILE_CNT INIFILE_DIRECTIVE INIFILE_VALUE INIFILE_SECTION INIFILE_LINE DIRECTIVE_TYPE INIFILE_NEW_VALUE
+	if [ "${1}" = "-shinc" ] ; then
+		INIFILE_SHELL_INCLUDE=yes
+		shift
+	else
+		INIFILE_SHELL_INCLUDE=no
+	fi
+	INIFILE_ACCESS_MODE=${1} ; INIFILE_MYCONFIG=${2} ; INIFILE_SEARCH_SECTION=${3} ; SEARCH_DIRECTIVE=${4}
+	if [ "${PKGOS_VERBOSE}" = "yes" ] ; then
+		if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then
+			echo "pkgos_inifile: Setting value in ${INIFILE_MYCONFIG}:[${INIFILE_SEARCH_SECTION}]/${SEARCH_DIRECTIVE}"
+		else
+			echo "pkgos_inifile: Getting value in ${INIFILE_MYCONFIG}:[${INIFILE_SEARCH_SECTION}]/${SEARCH_DIRECTIVE}"
+		fi
+	fi
+	if [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then INIFILE_NEW_VALUE=${5} ; else INIFILE_NEW_VALUE="pkgos_inifile_function_called_with_wrong_access_mode" ; fi
+
+	INIFILE_CNT=0
+	RET=NOT_FOUND
+	if [ ! -r "${INIFILE_MYCONFIG}" ] ; then
+		if [ "${PKGOS_VERBOSE}" = "yes" ] ; then echo "Config file ${INIFILE_MYCONFIG} not readable: exiting" ; fi
+		return
+	fi
+
+	pkgos_search_directive_line_num ${INIFILE_MYCONFIG} ${INIFILE_SEARCH_SECTION} ${SEARCH_DIRECTIVE}
+	if [ "${RET}" = "NOT_FOUND" ] ; then
+		return
+	fi
+	INIFILE_CNT=${RET}
+	INIFILE_LINE=$(head -n ${RET} ${INIFILE_MYCONFIG} | tail -n 1)
+	if [ "x${INIFILE_ACCESS_MODE}" = "xget" ] ; then
+		# This is a commented out directive
+		if echo ${INIFILE_LINE} | grep -q -E '^[ \t]*#.*$' ; then
+			RET=""
+			return
+		fi
+		# This is a directive which uses the equal sign (directive = value)
+		if echo ${INIFILE_LINE} | grep -q '^[ \t]*[\._\/a-zA-Z0-9]*[ \t]*=[ \t]*' ; then
+			RET=`echo ${INIFILE_LINE} | cut -d= -f2 | sed -e 's/^[ \t]//g'`
+			return
+		# This one uses the semi-column sign (/directive: value)
+		else
+			RET=`echo ${INIFILE_LINE} | cut -d':' -f2 | sed -e 's/^[ \t]//g'`
+			return
+		fi
+	elif [ "x${INIFILE_ACCESS_MODE}" = "xset" ] ; then
+		# This is a directive which uses the equal sign (directive = value)
+		if echo ${INIFILE_LINE} | grep -q '^[ \t#]*[\._\/a-zA-Z0-9]*[ \t]*=[ \t]*' ; then
+			pkgos_safesed "${INIFILE_CNT} s|.*|${SEARCH_DIRECTIVE} = ${INIFILE_NEW_VALUE}|" ${INIFILE_MYCONFIG}
+		# This one uses the semi-column sign (/directive: value)
+		else
+			pkgos_safesed" ${INIFILE_CNT} s|.*|${SEARCH_DIRECTIVE}: ${INIFILE_NEW_VALUE}|" ${INIFILE_MYCONFIG}
+		fi
+	else
+		RET="wrong mode"
+	fi
+}
+
+# Read the value of a directive in a config file,
+# then prompt the user about it.
+# Example (options in this order please...):
+# pkgos_read_config -p medium /etc/keystone/keystone.conf auth_token keystone/auth-token DEFAULT
+# To be used in: config
+pkgos_read_config () {
+	local READ_CONFIG_DIRECTIVE CONF_PATH READ_CONFIG_DEBCONF_NAME READ_CONFIG_SECTION FSET_SEEN READ_CONFIG_MY_PRIORITY
+	if [ "${1}" = "-p" ] ; then
+		READ_CONFIG_MY_PRIORITY=${2}
+		shift
+		shift
+	else
+		READ_CONFIG_MY_PRIORITY=high
+	fi
+	CONF_PATH=${1}
+	READ_CONFIG_SECTION=${2}
+	READ_CONFIG_DIRECTIVE=${3}
+	READ_CONFIG_DEBCONF_NAME=${4}
+
+	pkgos_inifile get ${CONF_PATH} ${READ_CONFIG_SECTION} ${READ_CONFIG_DIRECTIVE}
+	if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+		db_set ${READ_CONFIG_DEBCONF_NAME} ${RET}
+	fi
+	db_input ${READ_CONFIG_MY_PRIORITY} ${READ_CONFIG_DEBCONF_NAME} || true
+	db_go
+	db_get ${READ_CONFIG_DEBCONF_NAME}
+}
+
+# Read the current configuration for rabbitMQ and sets that into debconf
+# Params: $1 Path to config file
+#         $2 Section in the config file
+#         $3 prefix for the debconf template (eg: if we have nova/rabbit-host, then use "nova")
+# To be used in: config
+# Example call: pkgos_rabbit_read_conf /etc/nova/nova.conf DEFAULT nova
+pkgos_rabbit_read_conf () {
+	local RB_CONF_PATH RB_SECTION RB_DEBCONF_PREFIX NO_PROTO RB_HOST RB_USER_PASS RB_USER RB_PASS
+	RB_CONF_PATH=${1}
+	RB_SECTION=${2}
+	RB_DEBCONF_PREFIX=${3}
+
+	db_input high ${RB_DEBCONF_PREFIX}/configure_rabbit || true
+	db_go || true
+	db_get ${RB_DEBCONF_PREFIX}/configure_rabbit
+	if [ "$RET" = "true" ] ; then
+		if [ -r ${RB_CONF_PATH} ] && grep -q -E '^[ \t]*transport_url[ \t]*=.*' ${RB_CONF_PATH} ; then
+			pkgos_inifile get ${RB_CONF_PATH} DEFAULT transport_url
+			if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+				NO_PROTO=$(echo ${RET} | sed 's|^rabbit://||')
+				RB_HOST=$(echo ${NO_PROTO} | cut -d@ -f2)
+				RB_USER_PASS=$(echo ${NO_PROTO} | cut -d@ -f1)
+				RB_USER=$(echo ${RB_USER_PASS} | cut -d: -f1)
+				RB_PASS=$(echo ${RB_USER_PASS} | cut -d: -f2)
+				if [ -n "${RB_HOST}" ] ; then
+					db_set ${RB_DEBCONF_PREFIX}/rabbit-host ${RB_HOST}
+				fi
+				if [ -n "${RB_USER}" ] ; then
+					db_set ${RB_DEBCONF_PREFIX}/rabbit-userid ${RB_USER}
+				fi
+				if [ -n "${RB_PASS}" ] ; then
+					db_set ${RB_DEBCONF_PREFIX}/rabbit-password ${RB_PASS}
+				fi
+				db_input high ${RB_DEBCONF_PREFIX}/rabbit-host || true
+				db_input high ${RB_DEBCONF_PREFIX}/rabbit-userid || true
+				db_input high ${RB_DEBCONF_PREFIX}/rabbit-password || true
+				db_go
+			fi
+		else
+			pkgos_read_config ${RB_CONF_PATH} ${RB_SECTION} rabbit_host ${RB_DEBCONF_PREFIX}/rabbit-host
+			pkgos_read_config ${RB_CONF_PATH} ${RB_SECTION} rabbit_userid ${RB_DEBCONF_PREFIX}/rabbit-userid
+			pkgos_read_config ${RB_CONF_PATH} ${RB_SECTION} rabbit_password ${RB_DEBCONF_PREFIX}/rabbit-password
+		fi
+	fi
+}
+
+# Write the configuration for rabbitMQ
+# Params: $1 Path to config file
+#         $2 Section in the config file
+#         $3 prefix for the debconf template (eg: if we have nova/rabbit-host, then use "nova")
+# To be used in: postinst
+# Example call: pkgos_rabbit_write_conf /etc/nova/nova.conf DEFAULT nova
+pkgos_rabbit_write_conf () {
+	local RB_CONF_PATH RB_SECTION RB_DEBCONF_PREFIX RB_HOST RB_USERID RB_PASS
+	RB_CONF_PATH=${1}
+	RB_SECTION=${2}
+	RB_DEBCONF_PREFIX=${3}
+
+	db_get ${RB_DEBCONF_PREFIX}/configure_rabbit
+	if [ "$RET" = "true" ] ; then
+		db_get ${RB_DEBCONF_PREFIX}/rabbit-host
+		RB_HOST=${RET}
+
+		db_get ${RB_DEBCONF_PREFIX}/rabbit-userid
+		RB_USERID=${RET}
+
+		db_get ${RB_DEBCONF_PREFIX}/rabbit-password
+		RB_PASS=${RET}
+
+		if ! grep -q -E '^[ \t#]*transport_url[ \t]*=.*' ${RB_CONF_PATH} ; then
+			pkgos_add_directive ${RB_CONF_PATH} DEFAULT "transport_url =" "# Connection to the message queue."
+		fi
+		pkgos_comment_out_directive ${RB_CONF_PATH} ${RB_SECTION} rabbit_host
+		pkgos_comment_out_directive ${RB_CONF_PATH} ${RB_SECTION} rabbit_userid
+		pkgos_comment_out_directive ${RB_CONF_PATH} ${RB_SECTION} rabbit_password
+		echo "===> openstack-pkg-tools: writing RabbitMQ credentials: rabbit://${RB_USERID}:XXXXXX@${RB_HOST} ..."
+		pkgos_inifile set ${RB_CONF_PATH} DEFAULT transport_url rabbit://${RB_USERID}:${RB_PASS}@${RB_HOST}
+	fi
+	# Debconf isn't a registry, and this value has to be
+	# asked on each install/upgrade. Also, if the user switches
+	# to non-interactive, we don't want to do anything.
+	db_unregister ${RB_DEBCONF_PREFIX}/configure_rabbit
+}
+
+# Read the connection directive from a config file
+# and fills the dbc_* variable accordingly,
+# then call dbconfig to do the actual configuration.
+# To be used in: config
+# Example call: pkgos_dbc_read_conf -pkg glance-common /etc/glance/glance-registry.conf glance DEFAULT sql_connection $@
+pkgos_dbc_read_conf () {
+	local ADDR BEFORE_AT AFTER_AT SERVER_PORT CONN_STRING PKG_NAME CONF_PATH PARSED_DB_TYPE PARSED_USER PARSED_PASS PARSED_DB_NAME PARSED_SERVER PARSED_PORT
+	# This works around a bug in either dpkg, apt or debconf: in fact,
+	# likely in debconf, the variable DPKG_MAINTSCRIPT_PACKAGE isn't
+	# always set as it should.
+	if [ "${1}" = "-pkg" ] ; then
+		if [ -z "${DPKG_MAINTSCRIPT_PACKAGE}" ] ; then
+			DPKG_MAINTSCRIPT_PACKAGE=$2
+		fi
+		shift
+		shift
+	fi
+	CONF_PATH=${1}
+	CONN_SECTION=${2}
+	CONN_DIRECTIVE=${3}
+	PKG_NAME=${4}
+	# Do not remove what's bellow.
+	# We need to shift, because we're using $@ in the dbc_go call later
+	shift
+	shift
+	shift
+	shift
+
+	db_input high ${PKG_NAME}/configure_db || true
+	db_go || true
+	db_get ${PKG_NAME}/configure_db
+
+	DEFAULT_DBNAME=$(echo ${PKG_NAME}db | sed s/-//g)
+	if [ "$RET" = "true" ] && [ -f /usr/share/dbconfig-common/dpkg/config ] ; then
+		. /usr/share/dbconfig-common/dpkg/config
+		if [ -e "${CONF_PATH}" ] ; then
+			pkgos_inifile get ${CONF_PATH} ${CONN_SECTION} ${CONN_DIRECTIVE}
+			if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+				CONN_STRING=${RET}
+			fi
+		else
+			CONN_STRING=""
+		fi
+		PARSED_DB_TYPE=${CONN_STRING%%:*}
+		# If we have an undefined SQL type, we go back to a more sane default (eg: SQLite)
+		case "${PARSED_DB_TYPE}" in
+			"mysql+pymysql")
+				PARSED_DB_TYPE=mysql
+				;;
+			sqlite|mysql|pgsql)
+				;;
+			postgresql*)
+				PARSED_DB_TYPE=pgsql
+				;;
+			*)
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${DEFAULT_DBNAME}"
+				PARSED_DB_TYPE="sqlite"
+				;;
+		esac
+		if [ "${PARSED_DB_TYPE}" = "sqlite" ] ; then
+			if [ "${CONN_STRING}" = "sqlite:///${PKG_NAME}.db" ] ; then
+				CONN_STRING="sqlite:///var/lib/${PKG_NAME}/${DEFAULT_DBNAME}"
+			fi
+			PARSED_DB_PATH=${CONN_STRING#sqlite://}
+			if [ -z "${PARSED_DB_PATH}" ] ; then
+				PARSED_DB_PATH=/var/lib/${PKG_NAME}/${DEFAULT_DBNAME}
+			fi
+			dbc_basepath=`dirname "${PARSED_DB_PATH}"`
+			dbc_dbname=`basename "${PARSED_DB_PATH}"`
+			dbc_dbtypes="sqlite3, mysql, pgsql"
+		else
+			ADDR=${CONN_STRING#*sql://}
+			BEFORE_AT=${ADDR%%@*}
+			AFTER_AT=${ADDR#*@}
+			SERVER_PORT=${AFTER_AT%%/*}
+
+			PARSED_USER=${BEFORE_AT%%:*}
+			PARSED_PASS=${BEFORE_AT#*:}
+			PARSED_DB_NAME=${AFTER_AT#*/}
+			PARSED_SERVER=${SERVER_PORT%%:*}
+			case "${SERVER_PORT}" in
+			*:*)
+				PARSED_PORT=${SERVER_PORT#*:}
+				;;
+			*)
+				PARSED_PORT=""
+				;;
+			esac
+			if [ -n "${PARSED_USER}" ] && [ -n "${PARSED_PASS}" ] && [ -n "${PARSED_SERVER}" ] && [ -n "${PARSED_DB_NAME}" ] ; then
+				dbc_dbuser=${PARSED_USER}
+				dbc_dbpass=${PARSED_PASS}
+				dbc_dbserver=${PARSED_SERVER}
+				dbc_dbport=${PARSED_PORT}
+				dbc_dbname=${PARSED_DB_NAME}
+			fi
+			if [ "${PARSED_DB_TYPE}" = "mysql" ] ; then
+				dbc_dbtypes="mysql, pgsql, sqlite3"
+			else
+				dbc_dbtypes="pgsql, mysql, sqlite3"
+			fi
+			dbc_authmethod_user="password"
+		fi
+		dbc_mysql_createdb_encoding="UTF8"
+		dbc_pgsql_createdb_encoding="UTF8"
+		echo "PKG-Openstack now calling: dbc_go "${DPKG_MAINTSCRIPT_PACKAGE} $@
+		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
+	fi
+}
+
+# Perform a MySQL query in a safe way (eg: no password or queries in the command line)
+pkgos_mysql_query () {
+	local MYSQL_Q_TMP MYSQL_P_TMP MYSQL_DBUSER MYSQL_DBPASS MYSQL_DBHOST MYSQL_DBPORT MYSQL_DBNAME MYSQL_QUERY MY_PORT
+	MYSQL_DBUSER=${1}
+	MYSQL_DBPASS=${2}
+	MYSQL_DBHOST=${3}
+	MYSQL_DBPORT=${4}
+	MYSQL_DBNAME=${5}
+	MYSQL_QUERY=${6}
+
+	MYSQL_P_TMP=`mktemp -t OpenStack-mysql-statement.XXXXXXXXXX`
+	MYSQL_Q_TMP=`mktemp -t OpenStack-mysql-statement.XXXXXXXXXX`
+	echo "[client]
+password=${MYSQL_DBPASS}" >${MYSQL_P_TMP}
+	echo ${MYSQL_QUERY} >${MYSQL_Q_TMP}
+	if [ -n "${MYSQL_DBPORT}" ] ; then
+		MY_PORT="--port=${MYSQL_DBPORT}"
+	fi
+	mysql --defaults-file=${MYSQL_P_TMP} -h${MYSQL_DBHOST} ${MY_PORT} -u${MYSQL_DBUSER} -D${MYSQL_DBNAME} < ${MYSQL_Q_TMP}
+	rm -f ${MYSQL_Q_TMP} ${MYSQL_P_TMP}
+}
+
+
+# Read values configured by dbconfig-common,
+# and set a connection directive accordingly
+# in a configuration file
+#
+# Caller should use something like this:
+# pkgos_dbc_postinst /etc/keystone/keystone.conf keystone connection $@
+# since dbc_go expect $@ as well.
+pkgos_dbc_postinst () {
+	local DBC_POST_CONF_PATH CONF_DIR DBC_POST_CONF_FNAME PKG_NAME SUITE
+	if [ "${1}" = "--suite" ] ; then
+		SUITE=${2}
+		shift
+		shift
+	else
+		SUITE=${4}
+	fi
+	DBC_POST_CONF_PATH=${1}
+	CONN_SECTION=${2}
+	CONN_DIRECTIVE=${3}
+	PKG_NAME=${4}
+	shift
+	shift
+	shift
+	shift
+
+	CONF_DIR=`dirname ${DBC_POST_CONF_PATH}`
+	DBC_POST_CONF_FNAME=`basename ${DBC_POST_CONF_PATH}`
+
+	# Create config files if they don't exist
+	if [ ! -d ${CONF_DIR} ] ; then
+		mkdir -p ${CONF_DIR}
+	fi
+	chmod 0770 ${CONF_DIR}
+	chown ${SUITE}:${SUITE} ${CONF_DIR}
+	if [ ! -e ${DBC_POST_CONF_PATH} ] ; then
+		install -D -m 0660 -o ${SUITE} -g ${SUITE} /usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${DBC_POST_CONF_FNAME} ${DBC_POST_CONF_PATH}
+	fi
+	db_get ${PKG_NAME}/configure_db
+	if [ "$RET" = "true" ] && [ -r /usr/share/dbconfig-common/dpkg/postinst ] ; then
+		. /usr/share/dbconfig-common/dpkg/postinst
+		dbc_dbfile_owner="${SUITE}:${SUITE}"
+		dbc_mysql_createdb_encoding="UTF8"
+		dbc_pgsql_createdb_encoding="UTF8"
+		dbc_go "${DPKG_MAINTSCRIPT_PACKAGE}" $@
+		if [ "$dbc_install" = "true" ] ; then
+			case "$dbc_dbtype" in
+				mysql)
+					if [ -n "$dbc_dbport" ] ; then
+						dbport=:$dbc_dbport
+					fi
+					SQL_CONNECTION="mysql+pymysql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
+					# Set the DB as UTF8
+					Q="ALTER DATABASE \`${dbc_dbname}\` CHARACTER SET utf8"
+					pkgos_mysql_query ${dbc_dbuser} ${dbc_dbpass} ${dbc_dbserver:-localhost} "${dbc_dbport}" ${dbc_dbname} "${Q}"
+					echo "===> opensatck-pkg-tools: writing db credentials: mysql+pymysql://$dbc_dbuser:XXXXXX@${dbc_dbserver:-localhost}$dbport/$dbc_dbname ..."
+					;;
+				postgresql*|pgsql)
+					if [ -n "$dbc_dbport" ] ; then
+						dbport=:$dbc_dbport
+					fi
+					SQL_CONNECTION="postgresql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
+					echo "===> opensatck-pkg-tools: writing db credentials: postgresql://$dbc_dbuser:XXXXXX@${dbc_dbserver:-localhost}$dbport/$dbc_dbname ..."
+					;;
+				*)
+					SQL_CONNECTION="sqlite:///$dbc_basepath/$dbc_dbname"
+					echo "===> opensatck-pkg-tools: writing db credentials: ${SQL_CONNECTION} ..."
+					;;
+			esac
+			pkgos_inifile set ${DBC_POST_CONF_PATH} ${CONN_SECTION} ${CONN_DIRECTIVE} ${SQL_CONNECTION}
+		fi
+	fi
+}
+
+# Reads auth_host, admin_tenant_name, admin_user and admin_password from old types of keystone_authtoken
+# or a www_authenticate_uri URL otherwise.
+# Prototype: pkgos_read_admin_creds <conf-file> <section> <PKG_NAME>
+# Example calls:
+# pkgos_read_admin_creds /etc/glance/glance-api.conf keystone_authtoken glance
+# To be used in: .config scripts
+pkgos_read_admin_creds () {
+	local READ_ADMIN_CRED_CONF_FNAME READ_ADMIN_CRED_PKG_NAME READ_ADMIN_CRED_SEARCH_SECTION
+	READ_ADMIN_CRED_CONF_FNAME=${1}
+	READ_ADMIN_CRED_SEARCH_SECTION=${2}
+	READ_ADMIN_CRED_PKG_NAME=${3}
+
+
+        db_input high ${READ_ADMIN_CRED_PKG_NAME}/configure_ksat || true
+        db_go
+        db_get ${READ_ADMIN_CRED_PKG_NAME}/configure_ksat
+        if [ "${RET}" = "true" ] ; then
+		# If the file is there, attempt to convert it from Pike and prior to Queens and above
+		if [ -r "${READ_ADMIN_CRED_CONF_FNAME}" ] ; then
+			# First, we migrate from old directives admin_tenant_name -> project_name, etc.
+			# ### admin_password -> password ###
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} password
+			if [ "${RET}" = "NOT_FOUND" ] ; then
+				pkgos_add_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} "password =" "# Password for auth."
+			fi
+			pkgos_deprecate_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} admin_password ${READ_ADMIN_CRED_SEARCH_SECTION} password
+
+			# ### admin_tenant_name -> project_name ###
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} project_name
+			if [ "${RET}" = "NOT_FOUND" ] ; then
+				pkgos_add_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} "project_name =" "# Project name for auth."
+			fi
+			pkgos_deprecate_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} admin_tenant_name ${READ_ADMIN_CRED_SEARCH_SECTION} project_name
+
+			# ### admin_user -> username ###
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} username
+			if [ "${RET}" = "NOT_FOUND" ] ; then
+				pkgos_add_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} "username =" "# Username for auth."
+			fi
+			pkgos_deprecate_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} admin_user ${READ_ADMIN_CRED_SEARCH_SECTION} username
+
+			# Then we manage auth_host -> www_authenticate_uri
+			# and auth_uri -> www_authenticate_uri
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} www_authenticate_uri
+			if [ "${RET}" = "NOT_FOUND" ] ; then
+				pkgos_add_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} "www_authenticate_uri =" "# Complete 'public' Identity API endpoint."
+			fi
+			pkgos_deprecate_directive ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_uri ${READ_ADMIN_CRED_SEARCH_SECTION} www_authenticate_uri
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_host
+			if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+				pkgos_inifile set ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} www_authenticate_uri http://${RET}:5000
+			fi
+
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_protocol
+			if [ "${RET}" = "http" ] ; then
+			        PROTO=http
+			else
+			        PROTO=https
+			fi
+			pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_host
+			ADDR=${RET}
+			if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+			        pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} www_authenticate_uri
+			        if [ -z "${RET}" ] ; then
+			                pkgos_inifile set ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} www_authenticate_uri ${PROTO}://${ADDR}:5000
+			        fi
+			        pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_url
+			        if [ -z "${RET}" ] ; then
+			                pkgos_inifile set ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_url ${PROTO}://${ADDR}:5000
+			        fi
+			fi
+
+			pkgos_search_directive_line_num ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_host
+			if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+			        sed -i ${RET}'s/^auth_host/#auth_host/' ${READ_ADMIN_CRED_CONF_FNAME}
+			fi
+			pkgos_search_directive_line_num ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} auth_protocol
+			if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+			        sed -i ${RET}'s/^auth_protocol/#auth_protocol/' ${READ_ADMIN_CRED_CONF_FNAME}
+			fi
+		fi
+		# Get the public endpoint of keystone + region name
+		pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} www_authenticate_uri
+		[ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] && db_set ${READ_ADMIN_CRED_PKG_NAME}/ksat-public-url ${RET}
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-public-url || true
+
+		pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} region_name
+		[ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] && db_set ${READ_ADMIN_CRED_PKG_NAME}/ksat-region ${RET}
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-region || true
+
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-create-service-user || true
+		db_go
+		# If we must create a new user, then what is the admin credentials in Keystone to do it?
+		db_get ${READ_ADMIN_CRED_PKG_NAME}/ksat-create-service-user
+		if [ "${RET}" = "true" ] ; then
+			db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-admin-username || true
+			db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-admin-project-name || true
+			db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-admin-password || true
+		fi
+
+		# Get the credentials to write in the keystone_authtoken
+		pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} username
+		if [ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] ; then
+			db_set ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-username ${RET}
+		else
+			DEF_USERNAME=$(echo ${READ_ADMIN_CRED_PKG_NAME} | sed s/-common//)
+			db_set ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-username ${DEF_USERNAME}
+		fi
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-username || true
+
+		pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} project_name
+		[ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] && db_set ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-project-name ${RET}
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-project-name || true
+
+		pkgos_inifile get ${READ_ADMIN_CRED_CONF_FNAME} ${READ_ADMIN_CRED_SEARCH_SECTION} password
+		[ -n "${RET}" ] && [ ! "${RET}" = "NOT_FOUND" ] && db_set ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-password ${RET}
+		db_input high ${READ_ADMIN_CRED_PKG_NAME}/ksat-service-password || true
+		db_go
+	fi
+}
+
+# To be used in: postinst
+pkgos_write_admin_creds () {
+	local WRITE_CRED_CONF_FNAME WRITE_CRED_PKG_NAME WRITE_CRED_SECTION NO_PROTO AFTER_PORT WRITE_CRED_URL WRITE_CRED_PROTO
+	WRITE_CRED_CONF_FNAME=${1}
+	WRITE_CRED_SECTION=${2}
+	WRITE_CRED_PKG_NAME=${3}
+
+	db_get ${WRITE_CRED_PKG_NAME}/configure_ksat
+	if [ "${RET}" = "true" ] ; then
+		db_get ${WRITE_CRED_PKG_NAME}/ksat-public-url
+		KEYSTONE_PUBLIC_ENDPOINT=${RET}
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} www_authenticate_uri ${KEYSTONE_PUBLIC_ENDPOINT}
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_uri ${KEYSTONE_PUBLIC_ENDPOINT}
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} auth_url ${KEYSTONE_PUBLIC_ENDPOINT}
+		db_get ${WRITE_CRED_PKG_NAME}/ksat-region
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} region_name ${RET}
+
+		db_get ${WRITE_CRED_PKG_NAME}/ksat-service-username
+		SERVICE_USERNAME=${RET}
+		db_get ${WRITE_CRED_PKG_NAME}/ksat-service-project-name
+		SERVICE_PROJECTNAME=${RET}
+		db_get ${WRITE_CRED_PKG_NAME}/ksat-service-password
+		SERVICE_PASSWORD=${RET}
+
+		# Should we create a new keystone user?
+		db_get ${WRITE_CRED_PKG_NAME}/ksat-create-service-user
+		if [ "${RET}" = "true" ] ; then
+			# Set command line credentials
+			db_get ${WRITE_CRED_PKG_NAME}/ksat-admin-username
+			export OS_USERNAME=${RET}
+			db_get ${WRITE_CRED_PKG_NAME}/ksat-admin-project-name
+			export OS_TENANT_NAME=${RET}
+			export OS_PROJECT_NAME=${RET}
+			db_get ${WRITE_CRED_PKG_NAME}/ksat-admin-password
+			export OS_PASSWORD=${RET}
+			export OS_AUTH_URL=${KEYSTONE_PUBLIC_ENDPOINT}
+			export OS_IDENTITY_API_VERSION=3
+			export OS_PROJECT_DOMAIN_ID=default
+			export OS_USER_DOMAIN_ID=default
+			export OS_AUTH_TYPE=password
+
+			# And create that new service user with role admin
+			echo "Creating project ${SERVICE_PROJECTNAME} ..."
+			openstack project create --or-show ${SERVICE_PROJECTNAME} --description "Debian service project"
+
+			echo "Creating user ${SERVICE_USERNAME} ..."
+			openstack user create --or-show --password ${SERVICE_PASSWORD} --project ${SERVICE_PROJECTNAME} --email root@localhost --enable ${SERVICE_USERNAME}
+
+			# This should not be needed right now, so removing it...
+			# Edit: This is not truth, admin role is needed, it is also documented in documentation {kevko}
+			echo "Adding role admin to the user ${SERVICE_USERNAME}"
+			openstack role add --project ${SERVICE_PROJECTNAME} --user ${SERVICE_USERNAME} admin
+			# Edit : This is bad >> {kevko}
+			#echo "Adding role service to the user ${SERVICE_USERNAME} ..."
+			#openstack role add --project ${SERVICE_PROJECTNAME} --user ${SERVICE_USERNAME} service
+		fi
+		echo "===> opensatck-pkg-tools: writing ${WRITE_CRED_SECTION} credentials for user ${SERVICE_USERNAME} and project ${SERVICE_PROJECTNAME} ..."
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} username ${SERVICE_USERNAME}
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} project_name ${SERVICE_PROJECTNAME}
+		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} password ${SERVICE_PASSWORD}
+	fi
+	# For security reasons, we don't keep the auth-token in the debconf
+	# memory, so we purge it with db_unregister.
+	db_unregister ${WRITE_CRED_PKG_NAME}/ksat-admin-password
+	# Very likely, we don't want any upgrade to touch an already
+	# working value of keystone_authtoken, so it's best to just
+	# unregister this.
+	db_unregister ${WRITE_CRED_PKG_NAME}/configure_ksat
+}
+
+pkgos_write_new_conf () {
+	local WRITE_N_CONF_PKG_NAME CONF_FNAME
+	WRITE_N_CONF_PKG_NAME=${1}
+	CONF_FNAME=${2}
+
+	SRC_PATH=/usr/share/${DPKG_MAINTSCRIPT_PACKAGE}/${CONF_FNAME}
+	DST_DIR=/etc/${WRITE_N_CONF_PKG_NAME}
+	DST_PATH=${DST_DIR}/${CONF_FNAME}
+
+	# Create /etc/{package}/ directory and set right owner, group and permissions
+	install -g ${WRITE_N_CONF_PKG_NAME} -o ${WRITE_N_CONF_PKG_NAME} -m 0750 -d ${DST_DIR}
+
+	if [ ! -e ${DST_PATH} ] ; then
+		# Copy config to /etc/{package}/
+		install -D -m 0640 -o root -g ${WRITE_N_CONF_PKG_NAME} ${SRC_PATH} ${DST_PATH}
+	else
+		# Set right owner, group and permissions for sure, if config already exist
+		chown root:${WRITE_N_CONF_PKG_NAME} ${DST_PATH}
+		chmod 0640 ${DST_PATH}
+	fi
+}
+
+pkgos_adduser () {
+	local VAR_UG_PKG_NAME
+	local VAR_UG_SHELL
+	VAR_UG_PKG_NAME=${1}
+	VAR_UG_SHELL=${2}
+
+	if [ -z "${VAR_UG_SHELL}" ] ; then
+		VAR_UG_SHELL='/bin/false'
+	fi
+
+	# These are reserved UID/GID allocation
+	# See https://bugs.debian.org/884178
+	case "${VAR_UG_PKG_NAME}" in
+	"nova")
+		ADDGROUP_PARAM="--gid 64060"
+		ADDUSER_PARAM="--uid 64060"
+		;;
+	"cinder")
+		ADDGROUP_PARAM="--gid 64061"
+		ADDUSER_PARAM="--uid 64061"
+		;;
+	"glance")
+		ADDGROUP_PARAM="--gid 64062"
+		ADDUSER_PARAM="--uid 64062"
+		;;
+	*)
+		ADDGROUP_PARAM=""
+		ADDUSER_PARAM=""
+		;;
+	esac
+
+	# Create user and groups if they don't exist
+	if ! getent group ${VAR_UG_PKG_NAME} > /dev/null 2>&1 ; then
+		addgroup --quiet --system ${VAR_UG_PKG_NAME} ${ADDGROUP_PARAM}
+	fi
+	if ! getent passwd ${VAR_UG_PKG_NAME} > /dev/null 2>&1 ; then
+		adduser --system \
+			--home /var/lib/${VAR_UG_PKG_NAME} \
+			--no-create-home \
+			--quiet \
+			--disabled-password \
+			--shell ${VAR_UG_SHELL} \
+			--group ${VAR_UG_PKG_NAME} ${ADDUSER_PARAM}
+	else
+		usermod \
+			--shell ${VAR_UG_SHELL} \
+			${VAR_UG_PKG_NAME} >/dev/null 2>&1
+	fi
+}
+
+pkgos_var_user_group () {
+	local VAR_UG_PKG_NAME
+	local VAR_UG_SHELL
+	VAR_UG_PKG_NAME=${1}
+	VAR_UG_SHELL=${2}
+
+	# Remove user from adm group, because we was adding it nonintentionally
+	deluser -q ${VAR_UG_PKG_NAME} adm 2>/dev/null || true
+
+	pkgos_adduser ${VAR_UG_PKG_NAME} ${VAR_UG_SHELL}
+
+	# Create /var/{lib,log}/<package> with that user/group if it doesn't exist
+	if [ ! -d /var/lib/${VAR_UG_PKG_NAME} ] ; then
+		mkdir -p /var/lib/${VAR_UG_PKG_NAME}
+	fi
+	chown ${VAR_UG_PKG_NAME}:${VAR_UG_PKG_NAME} /var/lib/${VAR_UG_PKG_NAME}
+	if [ "${VAR_UG_PKG_NAME}" = "nova" ] ; then
+		chmod 755 /var/lib/nova
+	else
+		chmod 0750 /var/lib/${VAR_UG_PKG_NAME}
+	fi
+	if [ ! -d /var/log/${VAR_UG_PKG_NAME} ] ; then
+		mkdir -p /var/log/${VAR_UG_PKG_NAME}
+	fi
+	chown ${VAR_UG_PKG_NAME}:adm /var/log/${VAR_UG_PKG_NAME}
+	chmod 0750 /var/log/${VAR_UG_PKG_NAME}
+}
+
+pkgos_init () {
+	INIT_SCRIPT_NAME=${1}
+	if [ -x /etc/init.d/${INIT_SCRIPT_NAME} ] ; then
+		update-rc.d ${INIT_SCRIPT_NAME} defaults >/dev/null
+		invoke-rc.d ${INIT_SCRIPT_NAME} start || true
+	fi
+}
+
+pkgos_get_id () {
+    SERVICE_ENDPOINT=${SERVICE_ENDPOINT:-http://127.0.0.1:5000/v2.0/} SERVICE_TOKEN=${AUTH_TOKEN} "$@" | awk '/ id / { print $4 }'
+}
+
+# Asks the debconf questions for registering a service and its endpoint in keystone
+# Prototype: pkgos_register_endpoint_config <pkg-name>
+# Example: pkgos_register_endpoint_config glance
+# To be used in: config
+pkgos_register_endpoint_config () {
+	local REG_ENDP_PKG_NAME DEFROUTE_IF DEFROUTE_IP
+	REG_ENDP_PKG_NAME=${1}
+
+	db_input high ${REG_ENDP_PKG_NAME}/configure_api-endpoint || true
+	db_go
+	db_get ${REG_ENDP_PKG_NAME}/configure_api-endpoint
+	if [ "${RET}" = "true" ] ; then
+		db_get ${REG_ENDP_PKG_NAME}/api-keystone-address
+		if [ -z "${RET}" ] ; then
+			db_set ${REG_ENDP_PKG_NAME}/api-keystone-address 127.0.0.1
+		fi
+		db_input medium ${REG_ENDP_PKG_NAME}/api-keystone-address || true
+		db_input medium ${REG_ENDP_PKG_NAME}/api-keystone-proto || true
+
+		db_input low  ${REG_ENDP_PKG_NAME}/api-keystone-admin-username || true
+		db_input low  ${REG_ENDP_PKG_NAME}/api-keystone-admin-project-name || true
+		db_input high ${REG_ENDP_PKG_NAME}/api-keystone-admin-password || true
+
+		db_get ${REG_ENDP_PKG_NAME}/api-endpoint-address || true
+		if [ -z "${RET}" ] ; then
+			if which ip >/dev/null 2>&1 ; then
+				DEFROUTE_IF=$(awk '{ if ( $2 == "00000000" ) print $1 }' /proc/net/route | head -n 1)
+				if [ -n "${DEFROUTE_IF}" ] ; then
+					DEFROUTE_IP=$(LC_ALL=C ip addr show "${DEFROUTE_IF}" | grep inet | head -n 1 | awk '{print $2}' | cut -d/ -f1 | grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$' || true)
+				fi
+			fi
+			if [ -z "${DEFROUTE_IP}" ] ; then
+				DEFROUTE_IP=$(hostname -i | grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$' || true)
+			fi
+			if [ -n "${DEFROUTE_IP}" ] ; then
+				db_set ${REG_ENDP_PKG_NAME}/api-endpoint-address ${DEFROUTE_IP}
+			fi
+		fi
+		db_input medium ${REG_ENDP_PKG_NAME}/api-endpoint-address || true
+		db_input medium ${REG_ENDP_PKG_NAME}/api-endpoint-proto || true
+		db_input medium ${REG_ENDP_PKG_NAME}/api-endpoint-region-name || true
+		db_go
+	fi
+}
+
+# Register a service and its endpoint in keystone
+# Prototype: <pkg-name> <service-name> <service-type> <service-description> <serivce-port> <service-uri>
+# Example: pkgos_register_endpoint_postinst glance glance image "Glance Image Service" 9292 /v1
+# To be used in: postinst
+pkgos_register_endpoint_postinst () {
+	local PKG_NAME SERVICE_NAME SERVICE_TYPE SERVICE_DESC SERVICE_PORT SERVICE_URL KEYSTONE_ENDPOINT_IP AUTH_TOKEN PKG_ENDPOINT_IP REGION_NAME PKG_SERVICE_ID PKG_ENDPOINT_PROTO
+	PKG_NAME=${1}
+	SERVICE_NAME=${2}
+	SERVICE_TYPE=${3}
+	SERVICE_DESC=${4}
+	SERVICE_PORT=${5}
+	SERVICE_URL=${6}
+
+	REG_ENDPOINT_IPV4_REGEX='^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'
+	REG_ENDPOINT_IPV6_REGEX="^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$"
+	REG_ENDPOINT_FQDN_REGEX='^((([a-z0-9]([-a-z0-9]*[a-z0-9])?)|(#[0-9]+)|(\[((([01]?[0-9]{0,2})|(2(([0-4][0-9])|(5[0-5]))))\.){3}(([01]?[0-9]{0,2})|(2(([0-4][0-9])|(5[0-5]))))\]))\.)*(([a-z]([-a-z0-9]*[a-z0-9])?)|(#[0-9]+)|(\[((([01]?[0-9]{0,2})|(2(([0-4][0-9])|(5[0-5]))))\.){3}(([01]?[0-9]{0,2})|(2(([0-4][0-9])|(5[0-5]))))\]))$'
+	REG_ENDPOINT_REGION_REGEX="^([_a-zA-Z0-9]+)([_.a-zA-Z0-9-]*)([_.a-zA-Z0-9]+)\$"
+
+	db_get ${PKG_NAME}/configure_api-endpoint
+	if [ "${RET}" = "true" ] ; then
+		# Get and validate the format of Keystone's host address (ie: ipv4, ipv6, or fqdn)
+		db_get ${PKG_NAME}/api-keystone-address
+		KEYSTONE_ENDPOINT_IP=`echo "${RET}" | egrep ${REG_ENDPOINT_IPV4_REGEX}` || true
+		if [ -z "${KEYSTONE_ENDPOINT_IP}" ] ; then
+			KEYSTONE_ENDPOINT_IP=`echo "${RET}" | egrep ${REG_ENDPOINT_IPV6_REGEX}` || true
+			if [ -z ${KEYSTONE_ENDPOINT_IP} ] ; then
+				KEYSTONE_ENDPOINT_IP=`echo ${RET} | egrep ${REG_ENDPOINT_FQDN_REGEX}` || true
+				if [ -z ${KEYSTONE_ENDPOINT_IP} ] ; then
+					echo "Keystone's address could not be validated: will not register endpoint."
+					return
+				fi
+			fi
+		fi
+		# Get and validate the keystone server proto
+		db_get ${PKG_NAME}/api-keystone-proto
+		if [ "${RET}" = "https" ] ; then
+			KEYSTONE_ENDPOINT_PROTO=https
+		else
+			KEYSTONE_ENDPOINT_PROTO=http
+		fi
+		# Get and validate the format of service endpoint hostname (ie: ipv4, ipv6, or fqdn)
+		db_get ${PKG_NAME}/api-endpoint-address
+		PKG_ENDPOINT_IP=`echo ${RET} | egrep ${REG_ENDPOINT_IPV4_REGEX}` || true
+		if [ -z "${PKG_ENDPOINT_IP}" ] ; then
+			PKG_ENDPOINT_IP=`echo "${RET}" | egrep ${REG_ENDPOINT_IPV6_REGEX}` || true
+			if [ -z ${PKG_ENDPOINT_IP} ] ; then
+				PKG_ENDPOINT_IP=`echo ${RET} | egrep ${REG_ENDPOINT_FQDN_REGEX}` || true
+				if [ -z ${PKG_ENDPOINT_IP} ] ; then
+					echo "This service address could not be validated: will not register endpoint."
+					return
+				fi
+			fi
+		fi
+		# Get and validate the format of the region of the endpoint (ie: string with dots and dash)
+		db_get ${PKG_NAME}/api-endpoint-region-name
+		REGION_NAME=`echo "${RET}" | egrep ${REG_ENDPOINT_REGION_REGEX}` || true
+		if [ -z "${REGION_NAME}" ] ; then
+			echo "This region could not be validated: will not register endpoint."
+			return
+		fi
+		db_get ${PKG_NAME}/api-endpoint-proto
+		if [ "${RET}" = "https" ] ; then
+			PKG_ENDPOINT_PROTO=https
+		else
+			PKG_ENDPOINT_PROTO=http
+		fi
+
+		db_get ${PKG_NAME}/api-keystone-admin-username
+		KEYSTONE_ADMIN_NAME=${RET}
+		db_get ${PKG_NAME}/api-keystone-admin-project-name
+		KEYSTONE_PROJECT_NAME=${RET}
+		db_get ${PKG_NAME}/api-keystone-admin-password
+		KEYSTONE_ADMIN_PASSWORD=${RET}
+		if [ -n "${KEYSTONE_ENDPOINT_IP}" ] && [ -n "${PKG_ENDPOINT_IP}" ] && [ -n "${REGION_NAME}" ] && [ -n "${KEYSTONE_PROJECT_NAME}" ] && [ -n "${KEYSTONE_ADMIN_NAME}" ]  && [ -n "${KEYSTONE_ADMIN_PASSWORD}" ]; then
+			echo "Registering service and endpoints for ${SERVICE_NAME} with type ${SERVICE_TYPE} at ${PKG_ENDPOINT_PROTO}://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}"
+			export OS_PROJECT_DOMAIN_ID=default
+			export OS_USER_DOMAIN_ID=default
+			export OS_TENANT_NAME=${KEYSTONE_PROJECT_NAME}
+			export OS_PROJECT_NAME=${KEYSTONE_PROJECT_NAME}
+			export OS_USERNAME=${KEYSTONE_ADMIN_NAME}
+			export OS_PASSWORD=${KEYSTONE_ADMIN_PASSWORD}
+			export OS_AUTH_URL=${KEYSTONE_ENDPOINT_PROTO}://${KEYSTONE_ENDPOINT_IP}:5000/v3/
+			export OS_IDENTITY_API_VERSION=3
+			export OS_AUTH_VERSION=3
+			export OS_PROJECT_DOMAIN_ID=default
+			export OS_USER_DOMAIN_ID=default
+			export OS_NO_CACHE=1
+			NUM_LINES=$(OS_PASSWORD=${KEYSTONE_ADMIN_PASSWORD} openstack service list --format=csv | q -d , -H 'SELECT ID FROM - WHERE `Type`="'${SERVICE_TYPE}'"' | wc -l)
+			if [ "${NUM_LINES}" = "0" ] ; then
+				openstack service create --name=${SERVICE_NAME} --description="${SERVICE_DESC}" ${SERVICE_TYPE}
+				openstack endpoint create --region "${REGION_NAME}" ${SERVICE_NAME} public   ${PKG_ENDPOINT_PROTO}://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+				openstack endpoint create --region "${REGION_NAME}" ${SERVICE_NAME} internal ${PKG_ENDPOINT_PROTO}://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+				openstack endpoint create --region "${REGION_NAME}" ${SERVICE_NAME} admin    ${PKG_ENDPOINT_PROTO}://${PKG_ENDPOINT_IP}:${SERVICE_PORT}${SERVICE_URL}
+			else
+				echo "Service already registered: skipping service endpoint creation."
+			fi
+		else
+			echo "Problem in endpoint parameter (IPs or otherwise). Will skip service endpoint creation."
+		fi
+		# Since there's very little chance a 2nd registration of the
+		# endpoint will be needed, we forget the value of
+		# ${PKG_NAME}/register-endpoint. If later on the
+		# administrator of the server upgrades, it will be asked
+		# again, or eventually, dpkg-reconfigure <package-name> can
+		# be used.
+		db_unregister ${PKG_NAME}/configure_api-endpoint
+	else
+		echo "Will not register "${SERVICE_NAME}" endpoint this time (no user request for it)."
+	fi
+	# For security reasons, we don't keep the auth-token in the debconf
+	# memory, so we purge it with db_unregister.
+	db_unregister ${PKG_NAME}/api-keystone-admin-password
+}
+
+# Before removing the package, ask if we should remove the db
+# Prototype: pkgos_prerm_db_clean ${1} <template-prefix> <package-name>
+# Example:   pkgos_prerm_db_clean ${1} neutron neutron-common
+pkgos_prerm_db_clean () {
+	local PKPRM_TEMPLATE_PREFIX PKPRM_PACKAGE_NAME
+	PKPRM_TEMPLATE_PREFIX=${1}
+	PKPRM_PACKAGE_NAME=${2}
+	shift
+	shift
+	DPKG_COMMAND=${1}
+
+	if [ "${1}" = "remove" ] ; then
+		. /usr/share/debconf/confmodule
+
+		# We unregister the value, since we don't want to use
+		# debconf as a register, and prefer a volatile thing.
+		db_unregister ${PKPRM_TEMPLATE_PREFIX}/configure_db
+		db_input ${PKPRM_TEMPLATE_PREFIX}/configure_db || true
+		db_get ${PKPRM_TEMPLATE_PREFIX}/configure_db
+		if [ "$RET" = "true" ]; then
+			if [ -e /usr/share/dbconfig-common/dpkg/prerm ] ; then
+				. /usr/share/dbconfig-common/dpkg/prerm
+				dbc_go ${neutron-common} $@
+			fi
+		fi
+	fi
+}
+
+# Perform dbconfig-common cleanups when removing a package
+# Prototype: pkgos_postrm_db_clean <template-prefix-name> <package-name> $@
+# Example:   pkgos_postrm_db_clean neutron                neutron-common $@
+pkgos_postrm_db_clean () {
+	local PKPRM_TEMPLATE_PREFIX PKPRM_PACKAGE_NAME
+	PKPRM_TEMPLATE_PREFIX=${1}
+	PKPRM_PACKAGE_NAME=${2}
+	shift
+	shift
+        # Purge db on purge
+        if [ -f /usr/share/debconf/confmodule ] ; then
+                . /usr/share/debconf/confmodule
+                db_get ${PKPRM_TEMPLATE_PREFIX}/configure_db
+                if [ "$RET" = "true" ] ; then
+                        if [ -f /usr/share/dbconfig-common/dpkg/postrm ] ; then
+                                . /usr/share/dbconfig-common/dpkg/postrm
+                                dbc_go ${PKPRM_PACKAGE_NAME} $@
+                        else
+                                rm -f /etc/dbconfig-common/${PKPRM_PACKAGE_NAME}.conf
+                                if which ucf >/dev/null 2>&1; then
+                                        ucf --purge /etc/dbconfig-common/${PKPRM_PACKAGE_NAME}.conf
+                                        ucfr --purge ${PKPRM_PACKAGE_NAME} /etc/dbconfig-common/${PKPRM_PACKAGE_NAME}.conf
+                                fi
+                        fi
+                fi
+        fi
+}
+
+# Perform cleanups when removing a package
+# Prototype: pkgos_postrm <template-prefix-name> <package-name> $@
+# Example:   pkgos_postrm neutron                neutron-common $@
+pkgos_postrm () {
+	local PKPRM_TEMPLATE_PREFIX PKPRM_PACKAGE_NAME
+	pkgos_postrm_db_clean $@
+
+	PKPRM_TEMPLATE_PREFIX=${1}
+	PKPRM_PACKAGE_NAME=${2}
+	shift
+	shift
+
+	rm -rf /var/lib/${PKPRM_TEMPLATE_PREFIX} /var/log/${PKPRM_TEMPLATE_PREFIX} /var/lock/${PKPRM_TEMPLATE_PREFIX}
+}

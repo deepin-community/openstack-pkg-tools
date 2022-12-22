@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -e
+
+PKG_NAME=${1}
+shift
+
+TEMPLATE_NAME=${1}
+shift
+
+# Fetch all the templates we need from argv
+# because we will iterate more than once on them
+TEMPLATES=""
+for i in $@ ; do
+	if [ -n "${TEMPLATES}" ] ; then
+		TEMPLATES="${TEMPLATES} "
+	fi
+	TEMPLATES="${TEMPLATES}${1}"
+	shift
+done
+
+# Concat an eventual package specific template
+if [ -e debian/${PKG_NAME}.templates.in ] ; then
+	cat debian/${PKG_NAME}.templates.in >>debian/${PKG_NAME}.templates
+fi
+
+# Concat all the stuff asked
+for i in ${TEMPLATES} ; do
+	cat /usr/share/openstack-pkg-tools/debconf-templates/openstack-pkg-tools.configure-${i}.templates >>debian/${PKG_NAME}.templates
+done
+
+# Fix the name of the templates
+sed -i 's|Template: ospt/|Template: '${TEMPLATE_NAME}'/|' debian/${PKG_NAME}.templates
+
+# Concat all the translations
+mkdir -p debian/po
+for i in $(ls /usr/share/openstack-pkg-tools/debconf-templates/po/*.po) ; do
+	BASENAME=$(basename $i)
+	echo "Merging ${BASENAME}..."
+	if [ -e debian/po/${BASENAME} ] ; then
+		msgmerge -q $i debian/po/${BASENAME} 2>&1 >/dev/null
+	else
+		cp $i debian/po/
+	fi
+done
+
+# Check for POTFILES.in consistency
+# (ie: ensure it has our templates listed)
+touch debian/po/POTFILES.in
+for i in ${TEMPLATES} ; do
+	if ! grep -q "\[type: gettext/rfc822deb\] ${PKG_NAME}.templates" debian/po/POTFILES.in ; then
+		echo "[type: gettext/rfc822deb] ${PKG_NAME}.templates" >>debian/po/POTFILES.in
+	fi
+done
+
+# Finally, run the debconf-updatepo to merge all translations
+#debconf-updatepo

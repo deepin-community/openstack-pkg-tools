@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp example.ini example-result.ini
+pkgos_remove_section example-result.ini old_section
+osstt_assertFilesAreSame example-result.ini example-after-remove-section.ini
+rm example-result.ini
+if [ "${RET}" = "yes" ] ; then
+	exit 0
+else
+	echo "pkgos_remove_section didn't remove a section correctly"
+	exit 1
+fi

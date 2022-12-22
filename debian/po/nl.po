@@ -1,0 +1,507 @@
+# Dutch translation of openstack-pkg-tools debconf templates.
+# Copyright (C) 2012 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the openstack-pkg-tools package.
+# Jeroen Schot <schot@a-eskwadraat.nl>, 2012.
+# Frans Spiesschaert <Frans.Spiesschaert@yucom.be>, 2014, 2016, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: openstack-pkg-tools\n"
+"Report-Msgid-Bugs-To: openstack-pkg-tools@packages.debian.org\n"
+"POT-Creation-Date: 2019-10-10 18:44+0200\n"
+"PO-Revision-Date: 2018-09-12 21:17+0200\n"
+"Last-Translator: Frans Spiesschaert <Frans.Spiesschaert@yucom.be>\n"
+"Language-Team: Debian Dutch l10n Team <debian-l10n-dutch@lists.debian.org>\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Gtranslator 2.91.7\n"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid "Set up a database for this package?"
+msgstr "Een database opzetten voor dit pakket?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+"No database has been set up for this package. Before continuing, you should "
+"make sure you have the following information:"
+msgstr ""
+"Er is geen database geïnstalleerd voor dit pakket. Voor u doorgaat zou u "
+"moeten beschikken over de volgende informatie:"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+" * the type of database that you want to use - generally the MySQL backend\n"
+"   (which is compatible with MariaDB) is a good choice, and other\n"
+"   implementations like PostgreSQL or SQLite are often problematic with\n"
+"   OpenStack (this depends on the service);\n"
+" * the database server hostname (that server must allow TCP connections "
+"from\n"
+"   this machine);\n"
+" * a username and password to access the database."
+msgstr ""
+" * het soort database dat u wilt gebruiken - meestal is de MySQL-backend\n"
+"   (welke compatibel is met MariaDB) een goede keuze, en andere "
+"toepassingen,\n"
+"   zoals Postgress of SQLite, gaan vaak moeilijk samen met OpenStack\n"
+"   (afhankelijk van de dienst);\n"
+" * de computernaam van de databaseserver (die server moet\n"
+"   TCP-verbindingen vanaf deze computer toestaan);\n"
+" * een gebruikersnaam en een wachtwoord om de database te benaderen."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+"Note that if you plan on using a remote database server, you must first "
+"configure dbconfig-common to do so (using dpkg-reconfigure dbconfig-common), "
+"and the remote database server needs to be configured with adequate "
+"credentials."
+msgstr ""
+"Merk op dat indien u een externe databaseserver wilt gaan gebruiken, u eerst "
+"dbconfig-common daarvoor moet configureren (met dpkg-reconfigure dbconfig-"
+"common). Ook moet de externe databaseserver geconfigureerd zijn met passende "
+"toegangscodes."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+"If some of these requirements are missing, do not choose this option. Run "
+"with regular SQLite support instead."
+msgstr ""
+"Indien sommige van deze vereisten ontbreken, moet u deze optie niet kiezen. "
+"Gebruik de toepassing met gewone SQLite-ondersteuning."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-db.templates:1001
+msgid ""
+"You can change this setting later on by running \"dpkg-reconfigure -plow\"."
+msgstr ""
+"U kunt deze instelling later wijzigen door \"dpkg-reconfigure -plow\" uit te "
+"voeren."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:1001
+msgid "Manage keystone_authtoken with debconf?"
+msgstr "keystone_authtoken met debconf beheren?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:1001
+msgid ""
+"Every OpenStack service must contact Keystone, and this is configured "
+"through the [keystone_authtoken] section of the configuration. Specify if "
+"you wish to handle this configuration through debconf."
+msgstr ""
+"Elke OpenStack-dienst moet contact maken met Keystone en dit wordt "
+"geconfigureerd via de sectie [keystone_authtoken] van de configuratie. Geef "
+"aan of u deze configuratie via debconf wilt afhandelen."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:2001
+msgid "Auth server public endpoint URL:"
+msgstr "URL van het publieke toegangspunt op de authenticatieserver:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:2001
+msgid ""
+"Specify the URL of your Keystone authentication server public endpoint. This "
+"value will be set in the www_authenticate_uri directive."
+msgstr ""
+"Geef de URL op van het publieke toegangspunt van uw Keystone "
+"authenticatieserver. Deze waarde zal in de instructie www_authenticate_uri "
+"ingesteld worden."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+msgid "Keystone region:"
+msgstr "Keystone-regio:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+msgid "Specify the Keystone region to use."
+msgstr "Geef de te gebruiken Keystone-regio op."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:3001
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid ""
+"The region name is usually a string containing only ASCII alphanumerics, "
+"dots, and dashes."
+msgstr ""
+"De naam van de regio is gewoonlijk een tekenreeks met uitsluitend ASCII "
+"alfanumerieke tekens, punten en streepjes."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:4001
+msgid "Create service user?"
+msgstr "Een gebruiker aanmaken voor de dienst?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:4001
+msgid ""
+"This package can reuse an already existing username, or create one right "
+"now. If you wish to create one, then you will be prompted for the admin "
+"credentials."
+msgstr ""
+"Dit pakket kan een reeds bestaande gebruikersnaam hergebruiken of er nu "
+"meteen een aanmaken. Indien u er een wilt aanmaken, zal u naar de "
+"beheerdersidentificatiecodes gevraagd worden."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:5001
+msgid "Auth server admin username:"
+msgstr "Beheerdersgebruikersnaam op de authenticatieserver:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:6001
+msgid "Auth server admin project name:"
+msgstr "Beheerdersprojectnaam op de authenticatieserver:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:7001
+msgid "Auth server admin password:"
+msgstr "Beheerderswachtwoord op de authenticatieserver:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:8001
+msgid "Auth server service username:"
+msgstr "Gebruikersnaam voor de dienst op de authenticatieserver:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:9001
+msgid "Auth server service project name:"
+msgstr "Projectnaam voor de dienst op de authenticatieserver:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-ksat.templates:10001
+msgid "Auth server service password:"
+msgstr "Wachtwoord voor de dienst op de authenticatieserver:"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid "Configure RabbitMQ access with debconf?"
+msgstr "RabbitMQ-toegang configureren met debconf?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"OpenStack services need access to a message queue server, defined by the "
+"transport_url directive. Please specify whether configuring this should be "
+"handled through debconf."
+msgstr ""
+"OpenStack-diensten moeten toegang hebben tot een berichtenwachtrijserver, "
+"welke via de instructie transport_url gedefinieerd wordt. Geef aan of de "
+"configuratie ervan via debconf afgehandeld moet worden."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"Only access to RabbitMQ is handled, and the RabbitMQ user creation isn't "
+"performed. A new RabbitMQ user can be created with the commands:\""
+msgstr ""
+"Enkel de toegang tot RabbitMQ wordt afgehandeld, en het aanmaken van de "
+"gebruiker RabbitMQ wordt niet uitgevoerd. Een gebruiker RabbitMQ kan "
+"aangemaakt worden met de commando's:\""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+" - rabbitmqctl add_user openstack PASSWORD\n"
+" - rabbitmqctl set_permissions -p / openstack \".*\" \".*\" \".*\""
+msgstr ""
+" - rabbitmqctl add_user openstack WACHTWOORD\n"
+" - rabbitmqctl set_permissions -p / openstack \".*\" \".*\" \".*\""
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:1001
+msgid ""
+"Note that the default RabbitMQ guest account cannot be used for remote "
+"connections."
+msgstr ""
+"Merk op dat het standaard RabbitMQ gastaccount niet gebruikt kan worden voor "
+"externe verbindingen."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+msgid "IP address of your RabbitMQ host:"
+msgstr "IP-adres van uw RabbitMQ-computer:"
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid ""
+"In order to interoperate with other components of OpenStack, this package "
+"needs to connect to a central RabbitMQ server."
+msgstr ""
+"Om met andere componenten van OpenStack samen te werken, moet dit pakket een "
+"verbinding maken met een centrale RabbitMQ-server."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:2001
+msgid "Please specify the IP address of that server."
+msgstr "Geef het IP-adres op van die server."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+msgid "Username for connection to the RabbitMQ server:"
+msgstr "Gebruikersnaam voor de verbinding met de RabbitMQ-server:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:3001
+msgid "Please specify the username used to connect to that RabbitMQ server."
+msgstr ""
+"Geef de gebruikersnaam op die gebruikt wordt om verbinding te maken met deze "
+"RabbitMQ-server."
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid "Password for connection to the RabbitMQ server:"
+msgstr "Wachtwoord voor de verbinding met de RabbitMQ-server:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-rabbit.templates:4001
+msgid "Please specify the password used to connect to that RabbitMQ server."
+msgstr ""
+"Geef het wachtwoord op dat gebruikt wordt om verbinding te maken met deze "
+"RabbitMQ-server."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid "Register this service in the Keystone endpoint catalog?"
+msgstr "Deze dienst opnemen in de catalogus van Keystone-toegangspunten?"
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Each OpenStack service (each API) must be registered in the Keystone catalog "
+"in order to be accessible. This is done using \"openstack service create\" "
+"and \"openstack endpoint create\". This can be done automatically now."
+msgstr ""
+"Elke OpenStack-dienst (elke API) moet geregistreerd worden in de catalogus "
+"van Keystone om toegankelijk te zijn. Dit gebeurt met de opdrachten "
+"\"openstack service create\" en \"openstack endpoint create\". Dit kan nu "
+"automatisch uitgevoerd worden."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Note that you will need to have an up and running Keystone server on which "
+"to connect using a known admin project name, admin username and password. "
+"The admin auth token is not used anymore."
+msgstr ""
+"Merk op dat u een functionerende Keystone-server moet hebben om er een "
+"verbinding mee te maken met behulp van een gekende beheerdersprojectnaam, "
+"beheerdersgebruikersnaam en wachtwoord. Het beheerderslegitimatietoken wordt "
+"niet langer gebruikt."
+
+#. Type: boolean
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:1001
+msgid ""
+"Also, if a service with a matching name is already present in the Keystone "
+"catalog, endpoint registration will be aborted."
+msgstr ""
+"Merk eveneens op dat indien er in de catalogus van Keystone reeds een dienst "
+"met deze naam aanwezig is, de registratie van het toegangspunt afgebroken "
+"zal worden."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid "Keystone server address:"
+msgstr "Adres van de Keystone-server:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid ""
+"Please enter the address (IP or resolvable address) of the Keystone server, "
+"for creating the new service and endpoints."
+msgstr ""
+"Geef het IP-adres (IP of op te zoeken adres) op van de Keystone-server om de "
+"nieuwe dienst en de toegangspunten aan te maken."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:2001
+msgid ""
+"Any non-valid ipv4, ipv6 or host address string will abort the endpoint "
+"registration."
+msgstr ""
+"Een ongeldig ipv4-, ipv6-adres of ongeldige computernaam zullen de "
+"registratie van het toegangspunt afbreken."
+
+#. Type: select
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:3001
+msgid "Keystone endpoint protocol:"
+msgstr "Toegangspuntprotocol voor Keystone:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:4001
+msgid "Keystone admin username:"
+msgstr "Beheerdersgebruikersnaam voor Keystone:"
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:4001
+#: ../openstack-pkg-tools.configure-endpoint.templates:5001
+#: ../openstack-pkg-tools.configure-endpoint.templates:6001
+msgid ""
+"To create the service endpoint, this package needs to know the Admin "
+"username, project name, and password, so it can issue commands through the "
+"Keystone API."
+msgstr ""
+"Om het toegangspunt van de dienst aan te maken moet dit pakket de "
+"gebruikersnaam, projectnaam en wachtwoord van de beheerder kennen, zodat het "
+"commando's kan geven via de Keystone API."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:5001
+msgid "Keystone admin project name:"
+msgstr "Beheerdersprojectnaam voor Keystone:"
+
+#. Type: password
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:6001
+msgid "Keystone admin password:"
+msgstr "Beheerderswachtwoord voor Keystone:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:7001
+msgid "This service endpoint address:"
+msgstr "Adres van het toegangspunt voor deze dienst:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:7001
+msgid ""
+"Please enter the endpoint address that will be used to contact this service. "
+"You can specify either a Fully Qualified Domain Name (FQDN) or an IP address."
+msgstr ""
+"Geef het adres van het toegangspunt op dat gebruikt zal worden om contact te "
+"maken met deze dienst. U kunt ofwel een volledige unieke domeinnaam (Fully "
+"Qualified Domain Name - FQDN) of een IP-adres opgeven."
+
+#. Type: select
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:8001
+msgid "This service endpoint protocol:"
+msgstr "Toegangspuntprotocol voor deze dienst:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid "Name of the region to register:"
+msgstr "Naam van de registratieregio:"
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid ""
+"OpenStack supports using regions, with each region representing a different "
+"location (usually a different data center). Please enter the region name "
+"that you wish to use when registering the endpoint."
+msgstr ""
+"OpenStack ondersteunt het gebruik van regio's, waarbij elke regio een andere "
+"locatie (gewoonlijk een ander datacenter) vertegenwoordigt. Geef de naam van "
+"de regio op die u wenst te gebruiken bij het registreren van het "
+"toegangspunt."
+
+#. Type: string
+#. Description
+#: ../openstack-pkg-tools.configure-endpoint.templates:9001
+msgid "A non-valid string will abort the API endpoint registration."
+msgstr ""
+"Een ongeldige tekenreeks zal de registratie van het API-toegangspunt "
+"afbreken."
+
+#~| msgid "Auth server admin endpoint url:"
+#~ msgid "Auth server admin endpoint URL:"
+#~ msgstr "URL van het beheerderstoegangspunt op de authenticatieserver:"
+
+#~ msgid ""
+#~ "Specify the URL of your Keystone authentication server admin endpoint. "
+#~ "This value will be set in auth_url."
+#~ msgstr ""
+#~ "Geef de URL op van het beheerderstoegangspunt van uw Keystone "
+#~ "authenticatieserver. Deze waarde zal in auth_url ingesteld worden."
+
+#~ msgid ""
+#~ "Note that only access to rabbitmq is handled, and that rabbitmq-server "
+#~ "user creation isn't performed (you must create usernames and set "
+#~ "passwords before installing this package). Also, the standard rabbitmq-"
+#~ "server guest account cannot be used for remote connection."
+#~ msgstr ""
+#~ "Merk op dat enkel de toegang tot rabbitmq behandeld wordt en dat het "
+#~ "aanmaken van de gebruiker rabbitmq-server niet uitgevoerd wordt (u dient "
+#~ "gebruikersnamen aan te maken en wachtwoorden in te stellen vooraleer u "
+#~ "dit pakket installeert). Merk ook op dat het standaardaccount guest voor "
+#~ "rabbitmq-server niet bruikbaar is bij een externe verbinding."
+
+#~ msgid ""
+#~ "This address should be accessible from the clients that will use this "
+#~ "service, so if you are installing a public cloud, this should be a public "
+#~ "address. You can specify either a Fully Qualified Domain Name (FQDN) or "
+#~ "an IP address. If you specify an FQDN, it must be resolvable for every "
+#~ "host in this cloud, preferably through the /etc/hosts file rather than a "
+#~ "DNS query."
+#~ msgstr ""
+#~ "Dit adres moet bereikbaar zijn vanaf de cliënten die deze dienst zullen "
+#~ "gebruiken. Dus, indien u een publieke cloud installeert, moet dit een "
+#~ "openbaar adres zijn. U kunt ofwel een volledige unieke domeinnaam (Fully "
+#~ "Qualified Domain Name - FQDN) opgeven of een IP-adres. Indien u een FQDN "
+#~ "opgeeft, moet die op te zoeken zijn voor elke computer in deze cloud, bij "
+#~ "voorkeur via het bestand /etc/hosts, eerder dan via een DNS-opzoeking."

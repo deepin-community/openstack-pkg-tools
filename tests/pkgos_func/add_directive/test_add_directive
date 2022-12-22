@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+. ../../../tests/osstt
+
+cp example.ini example-result.ini
+pkgos_add_directive example-result.ini keystone_authtoken "username =" "# The username for auth"
+osstt_assertFilesAreSame example-result.ini example-after-add-directive.ini
+rm example-result.ini
+if [ "${RET}" = "yes" ] ; then
+	exit 0
+else
+	echo "example-result.ini is not the same as example-after-add-directive.ini"
+	exit 1
+fi

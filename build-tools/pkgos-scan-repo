@@ -1,0 +1,66 @@
+#!/bin/sh
+
+set -e
+#set -x
+
+### Make sure we're only executing this script once at a time ###
+### with 120s timeout, using flock                            ###
+LOCKDIR=/var/run/lock
+LOCKFILE=${LOCKDIR}/$(basename ${0})
+if [ "${1}" = "--nolock" ] ; then
+	shift
+else
+	echo "Locking scan repository process in ${LOCKFILE}"
+	if ! flock -w 120 -x ${LOCKFILE}.lock $0 --nolock $@ ; then
+		exit 1
+	fi
+	exit 0
+fi
+
+if ! [ -r /etc/pkgos/pkgos.conf ] ; then
+	echo "Could not read /etc/pkgos/pkgos.conf"
+	exit 1
+else
+	. /etc/pkgos/pkgos.conf
+fi
+
+# It's possible to give the repo name as parameter
+if [ -n "${1}" ] ; then
+	REPO_DEST=${1}
+fi
+
+# Scan the repo
+scan_repo() {
+	echo "===> Scanning ${REPO_ROOT} for packages in ${REPO_DEST} with arch ${SCAN_ARCHES}"
+	local MYCUR_DIR
+	MYCURDIR=`pwd`
+	cd ${REPO_ROOT}/debian
+	for i in ${SCAN_ARCHES} ; do
+		mkdir -p dists/${REPO_DEST}/main/binary-${i}
+		dpkg-scanpackages -a ${i} pool/${REPO_DEST}/main /dev/null > dists/${REPO_DEST}/main/binary-${i}/Packages
+		gzip -c dists/${REPO_DEST}/main/binary-${i}/Packages >dists/${REPO_DEST}/main/binary-${i}/Packages.gz
+		bzip2 -f -k dists/${REPO_DEST}/main/binary-${i}/Packages
+	done
+	mkdir -p dists/${REPO_DEST}/main/source
+	dpkg-scansources pool/${REPO_DEST}/main /dev/null >dists/${REPO_DEST}/main/source/Sources
+	gzip -c dists/${REPO_DEST}/main/source/Sources >dists/${REPO_DEST}/main/source/Sources.gz
+	bzip2 -f -k dists/${REPO_DEST}/main/source/Sources
+	cd dists/${REPO_DEST}
+	rm -f Release Release.gpg
+	TMPFILE=`mktemp -t pkgos_scan.XXXXXX`
+	apt-ftparchive release . -o APT::FTPArchive::Release::Origin="Mirantis" -o APT::FTPArchive::Release::Codename="${REPO_DEST}" > ${TMPFILE}
+	mv ${TMPFILE} ./Release
+	gpg -abs -o Release.gpg Release
+	gpg --clearsign Release
+	mv Release.asc InRelease
+	chmod +r Release Release.gpg
+	cd ${MYCURDIR}
+}
+
+
+
+scan_repo
+for i in ${SCAN_ARCHES} ; do
+	echo "===> Updating schroot ${TARGET_DISTRO}-${i}"
+	sudo sbuild-update -udcar ${TARGET_DISTRO}-${i}
+done

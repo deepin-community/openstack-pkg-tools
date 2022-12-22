@@ -1,0 +1,273 @@
+#!/bin/sh
+
+set -e
+set -x
+
+if [ "${1}" = "-u" ] && [ -n "${2}" ] ; then
+	ORIG_URL="${2}"
+	shift
+	shift
+fi
+
+if [ -z "${1}" ] ; then
+	echo "This tool creates a template Debian package out of a PyPi package name."
+	echo "Once this script has run, make sure it did what you expected, then use"
+	echo "the newly created source package as a template. Make sure you correct"
+	echo "the debian/copyright file before publishing any package."
+	echo "Usage: ${0} package-name"
+	exit 1
+fi
+
+PKG_NAME=${1}
+# Calculate the package name based on the command line argument
+LOWER_PKG_NAME=`echo ${PKG_NAME} | awk '{print tolower($0)}'`
+LOWER_PKG_NAME=`echo ${LOWER_PKG_NAME} | sed 's/_/-/g'`
+if echo ${LOWER_PKG_NAME} | grep -q '^python-' ; then
+	DEB_PKG_NAME=${LOWER_PKG_NAME}
+else
+	DEB_PKG_NAME=python-${LOWER_PKG_NAME}
+fi
+echo "===> Package name will be ${DEB_PKG_NAME}"
+
+if ! [ -e ${PKG_NAME}.json ] ; then
+	wget https://pypi.org/pypi/${PKG_NAME}/json -O ${PKG_NAME}.json
+fi
+PY3_PKG_NAME=python3-$(echo ${DEB_PKG_NAME} | sed 's/python-//g')
+
+# Get the info from .json using jq
+VERSION_STRING=$(cat ${PKG_NAME}.json | jq --raw-output '. | .info.version')
+    SHORT_DESC=$(cat ${PKG_NAME}.json | jq --raw-output '. | .info.summary')
+ UP_MAINT_NAME=$(cat ${PKG_NAME}.json | jq --raw-output '. | .info.author')
+  AUTHOR_EMAIL=$(cat ${PKG_NAME}.json | jq --raw-output '. | .info.author_email')
+      HOMEPAGE=$(cat ${PKG_NAME}.json | jq --raw-output '. | .info.home_page')
+  FIRST_LETTER=$(echo ${PKG_NAME} | awk '{print substr($0,1,1)}')
+
+if [ -e ${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.xz ] ; then
+	ORIG=${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.xz
+else
+	ORIG=${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.gz
+fi
+
+echo "===> Package info:
+Upstream version: ${VERSION_STRING}
+Author: ${UP_MAINT_NAME}
+Homepage: ${HOMEPAGE}"
+
+if [ ! -e ${ORIG} ] ; then
+	echo "===> Downloading ${ORIG} file"
+	if [ -z "${ORIG_URL}" ] ; then
+		if [ $(cat ${PKG_NAME}.json | jq --raw-output '. | .urls[0].packagetype') = "sdist" ] ; then
+			ORIG_URL=$(cat ${PKG_NAME}.json | jq  --raw-output '. | .urls[0].url')
+		else
+			if [ $(cat ${PKG_NAME}.json | jq --raw-output '. | .urls[1].packagetype') = "sdist" ] ; then
+				ORIG_URL=$(cat ${PKG_NAME}.json | jq  --raw-output '. | .urls[1].url')
+			else
+				echo "First and 2nd URL aren't sdist, please manually download..."
+				exit 1
+			fi
+		fi
+	fi
+	wget -nv "${ORIG_URL}" -O ${ORIG}
+fi
+
+echo "===> Extracting ${ORIG}"
+tar -xf ${ORIG}
+if ! [ ${PKG_NAME}-${VERSION_STRING} = ${DEB_PKG_NAME}-${VERSION_STRING} ] ; then
+	# The sed is in case there's a package called package_name with underscore, in which
+	# case we want to replace that by dash
+	mv $(echo ${PKG_NAME} | sed 's#_#*#g' | sed 's#-#*#g')-${VERSION_STRING} ${DEB_PKG_NAME}-${VERSION_STRING}
+fi
+
+echo "===> Creating debian folder for ${DEB_PKG_NAME}"
+if [ ! -d ${DEB_PKG_NAME}-${VERSION_STRING}/debian/source ] ; then
+	mkdir -p ${DEB_PKG_NAME}-${VERSION_STRING}/debian/source
+fi
+cd ${DEB_PKG_NAME}-${VERSION_STRING}
+
+echo "===> Searching for sphinx doc folder"
+if [ -e doc ] ; then
+	DOC_FOLDER=doc
+elif [ -e docs ] ; then
+	DOC_FOLDER=docs
+fi
+if [ -n "${DOC_FOLDER}" ] ; then
+	CONFPY_FILE=`find ${DOC_FOLDER} -name 'conf.py'`
+	if [ -r "${CONFPY_FILE}" ] ; then
+		DOC_FOLDER=`dirname ${CONFPY_FILE}`
+		SPHINX_BUILD_DEP=", python3-sphinx"
+		RULES_WITH=",sphinxdoc"
+		SUGGEST_DOC="
+Suggests: ${DEB_PKG_NAME}-doc"
+	else
+		DOC_FOLDER=
+		SPHINX_BUILD_DEP=""
+		RULES_WITH=""
+		SUGGEST_DOC=""
+	fi
+fi
+
+echo "===> Checking for PBR and fixing accordingly"
+# If the package uses PBR, then we need openstack-pkg-tools
+if grep -q "setup_requires=\['pbr'\]" ${DEB_PKG_NAME}-${VERSION_STRING}/setup.py ; then
+	OSTACK_PKG_T_CTRL=", openstack-pkg-tools"
+	# We need a mandatory include...
+	# ... and the export OSLO_PACKAGE_VERSION=$(VERSION)
+	OSTACK_PKG_T_RULES="include /usr/share/openstack-pkg-tools/pkgos.make
+export OSLO_PACKAGE_VERSION=\$(VERSION)"
+else
+	# Otherwise, we just include it non-mandatorily, so that
+	# we can use ./debian/rules gen-orig-xz
+	OSTACK_PKG_T_CTRL=""
+	OSTACK_PKG_T_RULES="-include /usr/share/openstack-pkg-tools/pkgos.make"
+fi
+
+echo "Source: ${DEB_PKG_NAME}
+Section: python
+Priority: optional
+Maintainer: Debian OpenStack <team+openstack@tracker.debian.org>
+Uploaders: Thomas Goirand <zigo@debian.org>
+Build-Depends:
+ debhelper (>= 10),
+ dh-python,
+ openstack-pkg-tools (>= 93~),
+ python3-setuptools,
+ python3-all${SPHINX_BUILD_DEP}${OSTACK_PKG_T_CTRL}
+Standards-Version: 4.3.0
+Vcs-Browser: https://salsa.debian.org/openstack-team/python/${DEB_PKG_NAME}
+Vcs-Git: https://salsa.debian.org/openstack-team/python/${DEB_PKG_NAME}.git
+Homepage: ${HOMEPAGE}
+
+Package: ${PY3_PKG_NAME}
+Architecture: all
+Depends: \${python3:Depends}, \${misc:Depends}${SUGGEST_DOC}
+Description: ${SHORT_DESC} - Python 3.x
+ - REPLACE ME -
+ .
+ This package contains the Python 3.x module.
+" >debian/control
+
+if [ -n "${DOC_FOLDER}" ] ; then
+	echo "Package: python-"$(echo ${LOWER_PKG_NAME} | sed s/python-//)"-doc
+Section: doc
+Architecture: all
+Depends: \${misc:Depends}, \${sphinxdoc:Depends}
+Description: ${SHORT_DESC} - doc
+ - REPLACE ME -
+ .
+ This package contains the documentation.
+" >>debian/control
+
+	echo "Document: ${DEB_PKG_NAME}-doc
+Title: ${PKG_NAME} Documentation
+Author: N/A
+Abstract: Sphinx documentation for ${PKG_NAME}
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python-${LOWER_PKG_NAME}-doc/html/index.html
+Files: /usr/share/doc/python-${LOWER_PKG_NAME}-doc/html/*" >debian/python-${LOWER_PKG_NAME}-doc.doc-base
+fi
+
+EDITOR=touch dch --create --package ${DEB_PKG_NAME} --distribution unstable --urgency medium -v ${VERSION_STRING}-1
+rm +1
+
+echo "10" >debian/compat
+
+if [ -n "${AUTHOR_EMAIL}" ] ; then
+	UP_MAINT_AND_EMAIL="${UP_MAINT_NAME} <${AUTHOR_EMAIL}>"
+else
+	UP_MAINT_AND_EMAIL=${UP_MAINT_NAME}
+fi
+echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ${PKG_NAME}
+Source: ${HOMEPAGE}
+
+Files: *
+Copyright: (c) 2019, ${UP_MAINT_AND_EMAIL}
+License: Apache-2
+
+Files: debian/*
+Copyright: (c) 2019, Thomas Goirand <zigo@debian.org>
+License: Apache-2
+
+License: Apache-2
+ Licensed under the Apache License, Version 2.0 (the \"License\");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+    http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an \"AS IS\" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license
+ can be found in /usr/share/common-licenses/Apache-2.0.
+" >debian/copyright
+
+if [ -n "${DOC_FOLDER}" ] ; then
+	SPHINX_BUILD_RULES="override_dh_sphinxdoc:
+ifeq (,\$(findstring nodoc, \$(DEB_BUILD_OPTIONS)))
+	PYTHONPATH=. python3 -m sphinx -b html ${DOC_FOLDER} debian/python-"$(echo ${LOWER_PKG_NAME} | sed s/python-//)"-doc/usr/share/doc/python-"$(echo ${LOWER_PKG_NAME} | sed s/python-//)"-doc/html
+	dh_sphinxdoc
+endif
+"
+else
+	SPHINX_BUILD_RULES=""
+fi
+
+if [ -e .testr.conf ] || [ -e .stestr.conf ] ; then
+	UNIT_TEST_RULES="override_dh_auto_test:
+ifeq (,\$(findstring nocheck, \$(DEB_BUILD_OPTIONS)))
+	pkgos-dh_auto_test --no-py2
+endif
+"
+else
+	UNIT_TEST_RULES="
+ifeq (,\$(findstring nocheck, \$(DEB_BUILD_OPTIONS)))
+	set -e ; for pyvers in \$(PYTHON3S); do \\
+		python\$\$pyvers setup.py test ; \\
+	done
+endif
+"
+fi
+
+echo "#!/usr/bin/make -f
+
+UPSTREAM_GIT := https://github.com/<please-user>/${PKG_NAME}.git
+${OSTACK_PKG_T_RULES}
+
+%:
+	dh \$@ --buildsystem=python_distutils --with python3${RULES_WITH}
+
+override_dh_auto_clean:
+	rm -rf build .stestr
+	find . -iname '*.pyc' -delete
+	for i in \$\$(find . -type d -iname __pycache__) ; do rm -rf \$\$i ; done
+
+override_dh_auto_build:
+	echo \"Do nothing...\"
+
+override_dh_auto_install:
+	pkgos-dh_auto_install --no-py2 --in-tmp
+
+${UNIT_TEST_RULES}
+
+override_dh_auto_test:
+	echo \"Do nothing...\"
+
+${SPHINX_BUILD_RULES}
+" >debian/rules
+chmod +x debian/rules
+
+echo "/usr" >debian/python3-${LOWER_PKG_NAME}.install
+
+echo "version=3
+opts=uversionmangle=s/(rc|a|b|c)/~\$1/ \\
+https://pypi.debian.net/${PKG_NAME}/${PKG_NAME}-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
+" >debian/watch
+
+echo "3.0 (quilt)" >debian/source/format
+echo 'extend-diff-ignore = "^[^/]*[.]egg-info/"' >debian/source/options

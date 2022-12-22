@@ -1,0 +1,38 @@
+# Start conversion
+pkgos_add_directive nova-test.ini keystone_authtoken "password =" "# Password for auth."
+pkgos_deprecate_directive nova-test.ini keystone_authtoken admin_password keystone_authtoken password
+pkgos_add_directive nova-test.ini keystone_authtoken "project_name =" "# Project name for auth."
+pkgos_deprecate_directive nova-test.ini keystone_authtoken admin_tenant_name keystone_authtoken project_name
+pkgos_add_directive nova-test.ini keystone_authtoken "username =" "# Project name for auth."
+pkgos_deprecate_directive nova-test.ini keystone_authtoken admin_user keystone_authtoken username
+pkgos_add_directive nova-test.ini keystone_authtoken "www_authenticate_uri =" "# Complete 'public' Identity API endpoint."
+pkgos_deprecate_directive nova-test.ini keystone_authtoken auth_uri keystone_authtoken www_authenticate_uri
+pkgos_add_directive nova-test.ini keystone_authtoken "auth_url =" "# Complete 'admin' Identity API endpoint."
+pkgos_inifile get nova-test.ini keystone_authtoken auth_protocol
+if [ "${RET}" = "http" ] ; then
+	PROTO=http
+else
+	PROTO=https
+fi
+pkgos_inifile get nova-test.ini keystone_authtoken auth_host
+ADDR=${RET}
+if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+	pkgos_inifile get nova-test.ini keystone_authtoken www_authenticate_uri
+	if [ -z "${RET}" ] ; then
+		pkgos_inifile set nova-test.ini keystone_authtoken www_authenticate_uri ${PROTO}://${ADDR}:5000
+	fi
+	pkgos_inifile get nova-test.ini keystone_authtoken auth_url
+	if [ -z "${RET}" ] ; then
+		pkgos_inifile set nova-test.ini keystone_authtoken auth_url ${PROTO}://${ADDR}:5000
+	fi
+fi
+
+pkgos_search_directive_line_num  nova-test.ini keystone_authtoken auth_host
+if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+	sed -i ${RET}'s/^auth_host/#auth_host/' nova-test.ini
+fi
+pkgos_search_directive_line_num  nova-test.ini keystone_authtoken auth_protocol
+if [ "${RET}" != "NOT_FOUND" ] && [ -n "${RET}" ] ; then
+	sed -i ${RET}'s/^auth_protocol/#auth_protocol/' nova-test.ini
+fi
+# End conversion

@@ -1,0 +1,35 @@
+#!/bin/sh
+# -*- mode: shell-script -*-
+
+# Perform cleanups when removing a package
+# Prototype: pkgos_postrm <template-prefix-name> <package-name> $@
+# Example:   pkgos_postrm neutron                neutron-common $@
+pkgos_dbc_postrm () {
+	local PKPRM_TEMPLATE_PREFIX PKPRM_PACKAGE_NAME
+
+	PKPRM_TEMPLATE_PREFIX=${1}
+	PKPRM_PACKAGE_NAME=${2}
+	shift
+	shift
+
+	if [ -f /usr/share/debconf/confmodule ] ; then
+		. /usr/share/debconf/confmodule
+		# If the package has the template, then it means we're having a db,
+		# and therefore we can call the dbconfig-common clean function.
+		db_get ${PKPRM_TEMPLATE_PREFIX}/configure_db
+		if [ "$RET" = "true" ] ; then
+			if [ -f /usr/share/dbconfig-common/dpkg/postrm ] ; then
+				. /usr/share/dbconfig-common/dpkg/postrm
+				dbc_go ${PKPRM_PACKAGE_NAME} $@
+			else
+				rm -f /etc/dbconfig-common/${PKPRM_PACKAGE_NAME}.conf
+				if which ucf >/dev/null 2>&1; then
+					ucf --purge /etc/dbconfig-common/${PKPRM_PACKAGE_NAME}.conf
+					ucfr --purge ${PKPRM_PACKAGE_NAME} /etc/dbconfig-common/${PKPRM_PACKAGE_NAME}.conf
+                                fi
+                        fi
+                fi
+	fi
+
+	rm -rf /var/lib/${PKPRM_TEMPLATE_PREFIX} /var/log/${PKPRM_TEMPLATE_PREFIX} /var/lock/${PKPRM_TEMPLATE_PREFIX}
+}

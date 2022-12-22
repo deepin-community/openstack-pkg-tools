@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+. ../../../pkgos_func
+
+pkgos_inifile get example.ini DEFAULT lock_dir
+if [ "${RET}" = "/var/lock" ] ; then
+	exit 0
+else
+	echo "Could not get value from example.ini"
+	exit 1
+fi

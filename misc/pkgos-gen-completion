@@ -1,0 +1,38 @@
+#!/bin/sh
+# -*- mode: shell-script -*-
+
+set -x
+
+# Default use python3
+PKGOS_PY_VER=python3
+for i in $@ ; do
+        case "${1}" in
+        "--py3")
+                PKGOS_PY_VER=python3
+                shift
+                ;;
+        "--py2")
+                PKGOS_PY_VER=python
+                shift
+                ;;
+        *)
+                ;;
+        esac
+done
+
+
+BINARY=$1
+CLIENT="${BINARY}client"
+PYTHON_SHELL_MODULE="${CLIENT}.shell"
+COMPLETION_INSTALL_PATH="$(pwd)/debian/${PKGOS_PY_VER}-$CLIENT/usr/share/bash-completion/completions"
+TEMP_FILE=$(mktemp)
+
+${PKGOS_PY_VER} -m ${PYTHON_SHELL_MODULE} complete > ${TEMP_FILE}
+
+if grep "_shell()" ${TEMP_FILE} > /dev/null ; then
+	mkdir -p ${COMPLETION_INSTALL_PATH}
+	cat ${TEMP_FILE}  | sed -r "s/shell/${BINARY}/g" > ${COMPLETION_INSTALL_PATH}/${BINARY}
+fi
+
+# Delete temp file
+rm -f ${TEMP_FILE}

@@ -1,0 +1,62 @@
+#!/bin/sh
+
+set -e
+
+CONF=${1}
+
+if [ -n "${2}" ] ; then
+	SECTION=${2}
+else
+	SECTION=keystone_authtoken
+fi
+
+if [ -n "${3}" ] ; then
+	DEFAULT_USERNAME=${3}
+else
+	DEFAULT_USERNAME=admin
+fi
+
+if ! [ -r "${CONF}" ] ; then
+	echo "Could not find ${CONF}"
+	exit 1
+fi
+
+# Calculate start and end of file before and after
+# the section starts
+SECTION_START=$(grep -n "^\[${SECTION}\]\$" ${CONF} | cut -d: -f1)
+FILE_LEN=$(cat ${CONF} | wc -l)
+END_OF_FILE=$(( ${FILE_LEN} - ${SECTION_START}))
+
+TEMP=$(mktemp $(basename $0).XXXXXX)
+head -n ${SECTION_START} ${CONF} >>${TEMP}
+
+echo "#
+# Re-added by openstack-pkg-tools
+#
+
+
+# Complete Identity API endpoint.
+auth_url = http://localhost:5000
+
+# Project name for auth.
+project_name = service
+
+# Project's domain name for auth.
+project_domain_name = Default
+
+# Username for auth.
+username = ${DEFAULT_USERNAME}
+
+# User's domain name for auth
+user_domain_name = Default
+
+# Password for auth
+#password =" >>${TEMP}
+
+tail -n ${END_OF_FILE} ${CONF} >>${TEMP}
+
+pkgos-fix-config-default ${TEMP} ${SECTION} www_authenticate_uri http://localhost:5000
+pkgos-fix-config-default ${TEMP} ${SECTION} auth_type password
+pkgos-fix-config-default ${TEMP} ${SECTION} region_name regionOne
+
+mv ${TEMP} ${CONF}

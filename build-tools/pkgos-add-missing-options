@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# Author: Michal Arbet <michal.arbet@ultimum.io>
+
+set -e
+
+CONF=${1}
+MISSING_OPTIONS=${3}
+
+if [ -n "${2}" ] ; then
+	SECTION=${2}
+else
+	SECTION=DEFAULT
+fi
+
+if ! [ -r "${CONF}" ] ; then
+	echo "Could not find ${CONF}"
+	exit 1
+fi
+
+if [ -r "${3}" ] ; then
+	# Calculate start and end of file before and after
+	# the section starts
+	SECTION_START=$(grep -n "^\[${SECTION}\]\$" ${CONF} | cut -d: -f1)
+	FILE_LEN=$(cat ${CONF} | wc -l)
+	END_OF_FILE=$(( ${FILE_LEN} - ${SECTION_START}))
+
+	TEMP=$(mktemp $(basename $0).XXXXXX)
+	head -n ${SECTION_START} ${CONF} >>${TEMP}
+	cat ${MISSING_OPTIONS} >>${TEMP}
+	tail -n ${END_OF_FILE} ${CONF} >>${TEMP}
+	mv ${TEMP} ${CONF}
+else
+	echo "Could not find ${MISSING_OPTIONS} or not readable."
+	exit 1
+fi
+
