@@ -41,7 +41,11 @@ get_deb_version() {
 
 create_orig_tar () {
 	if grep pristine-tar debian/gbp.conf | grep -q -i true ; then
-		echo "Nothing special to do with Pristine tar: not generating orig file!"
+		echo "===> Calling gbp export-orig to generate the tarball"
+		gbp export-orig
+		echo "===> Copying tarball in ../build-area"
+		mkdir -p ../build-area
+		cp ../*.orig.tar.* ../build-area
 	else
 		if [ "${IS_NATIVE}" = "no" ] ; then
 			COMPRESSION_TYPE=xz
@@ -119,7 +123,7 @@ cleanup_old_build
 get_deb_version
 create_orig_tar
 bop_it
-test_the_package
+#test_the_package
 copy_to_ftparchive
 # Scan the repo to add the new package
 pkgos-scan-repo

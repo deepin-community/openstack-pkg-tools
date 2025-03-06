@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-set -x
+#set -x
 
 if [ "${1}" = "-u" ] && [ -n "${2}" ] ; then
 	ORIG_URL="${2}"
@@ -48,11 +48,6 @@ else
 	ORIG=${DEB_PKG_NAME}_${VERSION_STRING}.orig.tar.gz
 fi
 
-echo "===> Package info:
-Upstream version: ${VERSION_STRING}
-Author: ${UP_MAINT_NAME}
-Homepage: ${HOMEPAGE}"
-
 if [ ! -e ${ORIG} ] ; then
 	echo "===> Downloading ${ORIG} file"
 	if [ -z "${ORIG_URL}" ] ; then
@@ -71,12 +66,180 @@ if [ ! -e ${ORIG} ] ; then
 fi
 
 echo "===> Extracting ${ORIG}"
-tar -xf ${ORIG}
-if ! [ ${PKG_NAME}-${VERSION_STRING} = ${DEB_PKG_NAME}-${VERSION_STRING} ] ; then
-	# The sed is in case there's a package called package_name with underscore, in which
-	# case we want to replace that by dash
-	mv $(echo ${PKG_NAME} | sed 's#_#*#g' | sed 's#-#*#g')-${VERSION_STRING} ${DEB_PKG_NAME}-${VERSION_STRING}
+if ! [ -e ${DEB_PKG_NAME}-${VERSION_STRING} ] ; then
+	tar -xf ${ORIG}
+	if ! [ ${PKG_NAME}-${VERSION_STRING} = ${DEB_PKG_NAME}-${VERSION_STRING} ] ; then
+		# The sed is in case there's a package called package_name with underscore, in which
+		# case we want to replace that by dash
+		mv $(echo ${PKG_NAME} | sed 's#_#*#g' | sed 's#-#*#g')-${VERSION_STRING} ${DEB_PKG_NAME}-${VERSION_STRING}
+	fi
 fi
+
+if [ -z "${HOMEPAGE}" ] || [ "${HOMEPAGE}" = "null" ] ; then
+	echo -n "Could not find homepage URL. Please enter it: "
+	read HOMEPAGE
+fi
+
+echo "===> Package info:
+Upstream version: ${VERSION_STRING}
+Author: ${UP_MAINT_NAME}
+Homepage: ${HOMEPAGE}"
+
+echo "===> Cloning package:"
+if ! [ -d ${DEB_PKG_NAME} ] ; then
+	git clone ${HOMEPAGE} ${DEB_PKG_NAME}
+fi
+
+echo "===> Getting info"
+echo "For which team should this be packaged?"
+echo "1 - OpenStack team"
+echo "2 - Python team"
+echo "3 - Home Assistant team"
+echo -n "Enter 1, 2 or 3: "
+read TEAM_NUM
+case ${TEAM_NUM} in
+1)
+	TEAM=openstack
+	MAINTAINER_FIELD="Debian OpenStack <team+openstack@tracker.debian.org>"
+	VCS_URL_START=https://salsa.debian.org/openstack-team/libs
+;;
+2)
+	TEAM=python
+	MAINTAINER_FIELD="Debian Python Team <team+python@tracker.debian.org>"
+	VCS_URL_START=https://salsa.debian.org/python-team/packages
+;;
+3)
+	TEAM=homeassistant
+	MAINTAINER_FIELD="Home Assistant Team <team+homeassistant@tracker.debian.org>"
+	VCS_URL_START=https://salsa.debian.org/homeassistant-team/deps
+;;
+*)
+	echo "Try again, bye bye..."
+	exit 1
+;;
+esac
+
+echo "===> Checking for license:"
+if [ -e ${DEB_PKG_NAME}/LICENSE ] ; then
+	LICENSE_FILE=${DEB_PKG_NAME}/LICENSE
+fi
+if [ -e ${DEB_PKG_NAME}/LICENSE.md ] ; then
+	LICENSE_FILE=${DEB_PKG_NAME}/LICENSE.md
+fi
+
+if [ -e "${LICENSE_FILE}" ] ; then
+	if grep -q "Apache Software License 2.0" ${LICENSE_FILE} ; then
+		LICENSE_TYPE=1
+	fi
+	if grep -q "Permission is hereby granted, free of charge" ${LICENSE_FILE} ; then
+		LICENSE_TYPE=3
+	fi
+fi
+
+if [ -z "${LICENSE_TYPE}" ] ; then
+	echo "What is the license of this package?"
+	echo "1 - Apache-2.0"
+	echo "2 - BSD-2-clause"
+	echo "3 - Expat"
+	echo "4 - GPL-2+"
+	echo "5 - LGPL-2.1"
+	echo "6 - Other"
+	echo -n "Enter 1, 2, 3, 4, 5 or 6: "
+	read LICENSE_TYPE
+fi
+
+case ${LICENSE_TYPE} in
+1)
+	LICENSE_TITLE="Apache-2.0"
+	LICENSE_TEXT=" Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+    http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an \"AS IS\" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license
+ can be found in /usr/share/common-licenses/Apache-2.0.
+"
+;;
+2)
+	LICENSE_TITLE="BSD-2-clause"
+	LICENSE_TEXT=""
+;;
+3)
+	LICENSE_TITLE="Expat"
+	LICENSE_TEXT=" Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the \"Software\"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+"
+;;
+4)
+	LICENSE_TITLE="GPL-2+"
+	LICENSE_TEXT=" This program is free software; you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 2 of the License, or (at your option) any later
+ version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along with
+ this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+ St, Fifth Floor, Boston, MA 02110-1301 USA
+ .
+ On Debian systems, the complete text of the GNU General Public License v2
+ (GPL) can be found in /usr/share/common-licenses/GPL-2.
+"
+;;
+5)
+	LICENSE_TITLE="LGPL-2.1"
+	LICENSE_TEXT=" This library is free software; you can redistribute it and/or modify it under
+ the terms of the GNU Lesser General Public License as published by the Free
+ Software Foundation; either version 2 of the License, or (at your option) any
+ later version.
+ .
+ This library is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ details.
+ .
+ You should have received a copy of the GNU Lesser General Public License along
+ with this library; if not, write to the Free Software Foundation, Inc., 51
+ Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public License
+ (LGPL) may be found in /usr/share/common-licenses/LGPL-2.1.
+"
+;;
+6)
+	LICENSE_TITLE="TODO"
+	LICENSE_TEXT=" TODO"
+;;
+*)
+	echo "Unknown entry: bye bye..."
+	exit 1
+;;
+esac
 
 echo "===> Creating debian folder for ${DEB_PKG_NAME}"
 if [ ! -d ${DEB_PKG_NAME}-${VERSION_STRING}/debian/source ] ; then
@@ -118,32 +281,37 @@ else
 	# Otherwise, we just include it non-mandatorily, so that
 	# we can use ./debian/rules gen-orig-xz
 	OSTACK_PKG_T_CTRL=""
-	OSTACK_PKG_T_RULES="-include /usr/share/openstack-pkg-tools/pkgos.make"
+	OSTACK_PKG_T_RULES="include /usr/share/openstack-pkg-tools/pkgos.make"
 fi
 
+echo "===> Creating debian/control"
 echo "Source: ${DEB_PKG_NAME}
 Section: python
 Priority: optional
-Maintainer: Debian OpenStack <team+openstack@tracker.debian.org>
-Uploaders: Thomas Goirand <zigo@debian.org>
+Maintainer: ${MAINTAINER_FIELD}
+Uploaders:
+ Thomas Goirand <zigo@debian.org>,
 Build-Depends:
- debhelper (>= 10),
+ debhelper-compat (= 11),
  dh-python,
- openstack-pkg-tools (>= 93~),
+ pybuild-plugin-pyproject,
+ openstack-pkg-tools,
  python3-setuptools,
  python3-all${SPHINX_BUILD_DEP}${OSTACK_PKG_T_CTRL}
-Standards-Version: 4.3.0
-Vcs-Browser: https://salsa.debian.org/openstack-team/python/${DEB_PKG_NAME}
-Vcs-Git: https://salsa.debian.org/openstack-team/python/${DEB_PKG_NAME}.git
+Build-Depends-Indep:
+ python3-pytest,
+Standards-Version: 4.6.1
+Vcs-Browser: ${VCS_URL_START}/${DEB_PKG_NAME}
+Vcs-Git: ${VCS_URL_START}/${DEB_PKG_NAME}.git
 Homepage: ${HOMEPAGE}
 
 Package: ${PY3_PKG_NAME}
 Architecture: all
 Depends: \${python3:Depends}, \${misc:Depends}${SUGGEST_DOC}
-Description: ${SHORT_DESC} - Python 3.x
- - REPLACE ME -
+Description: ${SHORT_DESC}
+ This package provides 
  .
- This package contains the Python 3.x module.
+ This package
 " >debian/control
 
 if [ -n "${DOC_FOLDER}" ] ; then
@@ -171,8 +339,7 @@ fi
 EDITOR=touch dch --create --package ${DEB_PKG_NAME} --distribution unstable --urgency medium -v ${VERSION_STRING}-1
 rm +1
 
-echo "10" >debian/compat
-
+echo "===> Creating debian/copyright"
 if [ -n "${AUTHOR_EMAIL}" ] ; then
 	UP_MAINT_AND_EMAIL="${UP_MAINT_NAME} <${AUTHOR_EMAIL}>"
 else
@@ -183,30 +350,18 @@ Upstream-Name: ${PKG_NAME}
 Source: ${HOMEPAGE}
 
 Files: *
-Copyright: (c) 2019, ${UP_MAINT_AND_EMAIL}
-License: Apache-2
+Copyright: (c) 2024, ${UP_MAINT_AND_EMAIL}
+License: ${LICENSE_TITLE}
 
 Files: debian/*
-Copyright: (c) 2019, Thomas Goirand <zigo@debian.org>
-License: Apache-2
+Copyright: (c) 2024, Thomas Goirand <zigo@debian.org>
+License: ${LICENSE_TITLE}
 
-License: Apache-2
- Licensed under the Apache License, Version 2.0 (the \"License\");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- .
-    http://www.apache.org/licenses/LICENSE-2.0
- .
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an \"AS IS\" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- .
- On Debian-based systems the full text of the Apache version 2.0 license
- can be found in /usr/share/common-licenses/Apache-2.0.
+License: ${LICENSE_TITLE}
+${LICENSE_TEXT}
 " >debian/copyright
 
+echo "===> Creating debian/rules"
 if [ -n "${DOC_FOLDER}" ] ; then
 	SPHINX_BUILD_RULES="override_dh_sphinxdoc:
 ifeq (,\$(findstring nodoc, \$(DEB_BUILD_OPTIONS)))
@@ -236,38 +391,69 @@ fi
 
 echo "#!/usr/bin/make -f
 
-UPSTREAM_GIT := https://github.com/<please-user>/${PKG_NAME}.git
+UPSTREAM_GIT := ${HOMEPAGE}.git
 ${OSTACK_PKG_T_RULES}
 
 %:
-	dh \$@ --buildsystem=python_distutils --with python3${RULES_WITH}
-
-override_dh_auto_clean:
-	rm -rf build .stestr
-	find . -iname '*.pyc' -delete
-	for i in \$\$(find . -type d -iname __pycache__) ; do rm -rf \$\$i ; done
-
-override_dh_auto_build:
-	echo \"Do nothing...\"
-
-override_dh_auto_install:
-	pkgos-dh_auto_install --no-py2 --in-tmp
-
-${UNIT_TEST_RULES}
-
-override_dh_auto_test:
-	echo \"Do nothing...\"
+	dh \$@ --buildsystem=pybuild --with python3${RULES_WITH}
 
 ${SPHINX_BUILD_RULES}
 " >debian/rules
 chmod +x debian/rules
 
-echo "/usr" >debian/python3-${LOWER_PKG_NAME}.install
-
-echo "version=3
+#echo "/usr" >debian/python3-${LOWER_PKG_NAME}.install
+echo "===> Creating debian/watch and debian/source"
+if echo ${HOMEPAGE} | grep -q github.com ; then
+	echo "version=4
+opts=\"dversionmangle=auto,mode=git,uversionmangle=s/\.0rc/~rc/;s/\.0b1/~b1/;s/\.0b2/~b2/;s/\.0b3/~b3/\" \
+${HOMEPAGE} refs/tags/(\d[brc\d\.]+)
+" >debian/watch
+else
+	echo "version=3
 opts=uversionmangle=s/(rc|a|b|c)/~\$1/ \\
 https://pypi.debian.net/${PKG_NAME}/${PKG_NAME}-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
 " >debian/watch
+fi
 
 echo "3.0 (quilt)" >debian/source/format
 echo 'extend-diff-ignore = "^[^/]*[.]egg-info/"' >debian/source/options
+
+echo "===> Adding pybuild-autopkgtest in debian/tests"
+mkdir -p debian/tests
+echo "Test-Command: pybuild-autopkgtest
+Depends: @, @builddeps@, pybuild-plugin-autopkgtest
+Restrictions: allow-stderr, skippable,
+Features: test-name=pybuild-autopkgtest
+" >debian/tests/control
+
+echo "===> Attempting to configure the Debian repo"
+cd ../${DEB_PKG_NAME}
+if git show v${VERSION_STRING} >/dev/null 2>/dev/null; then
+	git tag ${VERSION_STRING} v${VERSION_STRING}
+fi
+if ! git show ${VERSION_STRING} >/dev/null 2>/dev/null ; then
+	echo "Cannot find upstream tag: exiting."
+	exit 1
+fi
+
+git reset --hard ${VERSION_STRING}
+GIT_CUR_BRANCH=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+git checkout -b debian/unstable
+git branch -D ${GIT_CUR_BRANCH}
+cp -axuf ../${DEB_PKG_NAME}-${VERSION_STRING}/debian .
+git add debian
+wrap-and-sort -bastk
+
+echo "===> Regenerating orig tarball"
+rm -f ../*.orig.tar.*
+./debian/rules gen-orig-xz
+
+echo "===> Outputing reportbug template"
+echo "* Package name    : ${DEB_PKG_NAME}
+  Version         : ${VERSION_STRING}
+  Upstream Author : ${UP_MAINT_AND_EMAIL}
+* URL             : ${HOMEPAGE}
+* License         : ${LICENSE_TITLE}
+  Programming Lang: Python
+  Description     : ${SHORT_DESC}
+"

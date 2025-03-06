@@ -9,11 +9,11 @@ VERSION		?= $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[-].*/
 DEBFLAVOR	?= $(shell dpkg-parsechangelog -SDistribution)
 DEBPKGNAME	?= $(shell dpkg-parsechangelog -SSource)
 UPSTREAM_GIT	?= https://github.com/openstack/$(DEBPKGNAME).git
-GIT_TAG		?= $(shell echo '$(VERSION)' | sed -e 's/~/_/')
+GIT_TAG		?= $(shell echo '$(VERSION)' | sed -e 's/~/_/g')
 MANIFEST_EXCLUDE_STANDARD ?= $(DEBPKGNAME)
 DEBIAN_BRANCH	?= $(shell cat debian/gbp.conf | grep debian-branch | cut -d'=' -f2 | awk '{print $1}')
 
-export OSLO_PACKAGE_VERSION=$(shell dpkg-parsechangelog -SVersion | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//' -e 's/~git.*//' -e 's/~/.0/' -e 's/+dfsg1//' -e 's/+ds1//' | head -n 1)
+export OSLO_PACKAGE_VERSION=$(shell dpkg-parsechangelog -SVersion | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//' -e 's/~git.*//' -e 's/~bpo.*//' -e 's/~/.0/' -e 's/+dfsg1//' -e 's/+ds1//' | head -n 1)
 
 gen-init-configurations:
 	# Create the init scripts and systemd unit files from the template

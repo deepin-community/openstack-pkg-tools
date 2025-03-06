@@ -1,55 +1,41 @@
-# Translation of glance debconf template to Swedish
-# Copyright (C) 2012-2014 Martin Bagge <brother@bsnet.se>
-# This file is distributed under the same license as the glance package.
+# Translation of openstack-pkg-tools debconf template to Swedish
+# Copyright (C) 2012-2022 Martin Bagge <brother@persilja.net>
+# This file is distributed under the same license as the openstack-pkg-tools package.
 #
-# Martin Bagge <brother@bsnet.se>, 2012, 2014
+# Martin Bagge <brother@persilja.net>, 2012, 2014, 2022
 msgid ""
 msgstr ""
-"Project-Id-Version: glance\n"
+"Project-Id-Version: openstack-pkg-tools\n"
 "Report-Msgid-Bugs-To: openstack-pkg-tools@packages.debian.org\n"
 "POT-Creation-Date: 2019-10-10 18:44+0200\n"
-"PO-Revision-Date: 2014-01-09 10:35+0100\n"
-"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"PO-Revision-Date: 2022-05-13 13:16+0200\n"
+"Last-Translator: Martin Bagge / brother <brother@persilja.net>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: Swedish\n"
+"Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 3.0.1\n"
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-db.templates:1001
-#, fuzzy
-#| msgid "Set up a database for Glance?"
 msgid "Set up a database for this package?"
-msgstr "Ska en databas installeras för Glance?"
+msgstr "Ska en databas installeras för detta paket?"
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-db.templates:1001
-#, fuzzy
-#| msgid ""
-#| "No database has been set up for glance-registry or glance-api to use. "
-#| "Before continuing, you should make sure you have the following "
-#| "information:"
 msgid ""
 "No database has been set up for this package. Before continuing, you should "
 "make sure you have the following information:"
 msgstr ""
-"Ingen databas har installerats för glance-registry. Innan du fortsätter "
-"behöver följande finnas tillgängligt:"
+"Ingen databas har installerats för detta paket. Innan du fortsätter behöver "
+"följande finnas tillgängligt:"
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-db.templates:1001
-#, fuzzy
-#| msgid ""
-#| " * the type of database that you want to use;\n"
-#| " * the database server hostname (that server must allow TCP connections "
-#| "from this\n"
-#| "   machine);\n"
-#| " * a username and password to access the database."
 msgid ""
 " * the type of database that you want to use - generally the MySQL backend\n"
 "   (which is compatible with MariaDB) is a good choice, and other\n"
@@ -60,7 +46,11 @@ msgid ""
 "   this machine);\n"
 " * a username and password to access the database."
 msgstr ""
-" * vilken databastyp du vill använda.\n"
+" * vilken databastyp du vill använda. Generellt sett är MySQL-\n"
+"   kompatibilitet att föredra (exempelvis MariaDB). Andra alternativ\n"
+"   likt PostgreSQL och SQLite är ofta svåra att använda med\n"
+"   OpenStack (beroende på vilken\n"
+"   service som körs).\n"
 " * serverns värdnamn (som måste kunna ta emot TCP-anslutningar\n"
 "   från den här maskinen)\n"
 " * användarnamn och lösenord för att komma åt databasen."
@@ -74,39 +64,35 @@ msgid ""
 "and the remote database server needs to be configured with adequate "
 "credentials."
 msgstr ""
+"Observera att om du planerar att använda en databasserver på annan maskin så "
+"måste du justera detta i dbconfig-common först (använd dpkg-reconfigure "
+"dbconfig-common) och databasservern som du ämnar använda måste ställas in "
+"med korrekta uppgifter."
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-db.templates:1001
-#, fuzzy
-#| msgid ""
-#| "If some of these requirements are missing, do not choose this option and "
-#| "run with regular SQLite support."
 msgid ""
 "If some of these requirements are missing, do not choose this option. Run "
 "with regular SQLite support instead."
 msgstr ""
-"Om något av dessa krav saknar bör du avböja detta alternativ och fortsätta "
-"använda SQLite-stödet."
+"Om något av dessa krav saknas ska du avböja detta alternativ. Använd "
+"istället SQLite-stödet."
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-db.templates:1001
-#, fuzzy
-#| msgid ""
-#| "You can change this setting later on by running \"dpkg-reconfigure -plow "
-#| "glance-common\"."
 msgid ""
 "You can change this setting later on by running \"dpkg-reconfigure -plow\"."
 msgstr ""
-"Denna inställning kan ändras senare genom att köra \"dpkg-reconfigure -plow "
-"neutron\"."
+"Denna inställning kan ändras senare genom att köra \"dpkg-reconfigure -"
+"plow\"."
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:1001
 msgid "Manage keystone_authtoken with debconf?"
-msgstr ""
+msgstr "Ska keystone_authtoken hanteras av debconf?"
 
 #. Type: boolean
 #. Description
@@ -116,14 +102,15 @@ msgid ""
 "through the [keystone_authtoken] section of the configuration. Specify if "
 "you wish to handle this configuration through debconf."
 msgstr ""
+"Alla OpenStack-tjänster måste kontakta Keystone och detta ställs in via "
+"sektionen [keystone_authtoken] i inställningsfilen. Ange om du vill hantera "
+"detta genom debconf."
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:2001
-#, fuzzy
-#| msgid "Authentication server username:"
 msgid "Auth server public endpoint URL:"
-msgstr "Användarnamn på identifieringsservern:"
+msgstr "URL för publik ändpunkt på identifieringsservern:"
 
 #. Type: string
 #. Description
@@ -132,20 +119,20 @@ msgid ""
 "Specify the URL of your Keystone authentication server public endpoint. This "
 "value will be set in the www_authenticate_uri directive."
 msgstr ""
+"Ange URL för din publika ändpunkt på Keystone-autentiseringsservern. Detta "
+"värde kommer att sparas för www_authenticate_uri."
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:3001
-#, fuzzy
-#| msgid "Keystone authentication token:"
 msgid "Keystone region:"
-msgstr "Autetiseringsvärde för Keystone:"
+msgstr "Keystone-region:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:3001
 msgid "Specify the Keystone region to use."
-msgstr ""
+msgstr "Ange vilken Keystone-region som ska användas."
 
 #. Type: string
 #. Description
@@ -155,12 +142,14 @@ msgid ""
 "The region name is usually a string containing only ASCII alphanumerics, "
 "dots, and dashes."
 msgstr ""
+"Regionnamnet är vanligtvis en sträng som enbart innehåller enkla "
+"alfanumeriska tecken, punkter och bindestreck."
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:4001
 msgid "Create service user?"
-msgstr ""
+msgstr "Ska en tjänsteanvändare skapas?"
 
 #. Type: boolean
 #. Description
@@ -170,60 +159,51 @@ msgid ""
 "now. If you wish to create one, then you will be prompted for the admin "
 "credentials."
 msgstr ""
+"Detta paket kan återanvända en tidigare skapad användare eller skapa en ny "
+"åt dig. Om du vill skapa en ny användare kommer du att tillfrågas om "
+"administratörsrättigheterna."
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:5001
-#, fuzzy
-#| msgid "Authentication server username:"
 msgid "Auth server admin username:"
-msgstr "Användarnamn på identifieringsservern:"
+msgstr "Användarnamn för administratör på autentiseringsservern:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:6001
-#, fuzzy
-#| msgid "Authentication server tenant name:"
 msgid "Auth server admin project name:"
-msgstr "Namn för \"tenant\" (administratör) på identifieringsservern:"
+msgstr "Projektnamn för administratör på autentiseringsservern:"
 
 #. Type: password
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:7001
-#, fuzzy
-#| msgid "Authentication server password:"
 msgid "Auth server admin password:"
-msgstr "Lösenord på identifieringsservern:"
+msgstr "Lösenord för administratör på autentiseringsservern:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:8001
-#, fuzzy
-#| msgid "Authentication server username:"
 msgid "Auth server service username:"
-msgstr "Användarnamn på identifieringsservern:"
+msgstr "Service-användare på autentiseringsservern:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:9001
-#, fuzzy
-#| msgid "Authentication server username:"
 msgid "Auth server service project name:"
-msgstr "Användarnamn på identifieringsservern:"
+msgstr "Servicens projektnamn på autentiseringsservern:"
 
 #. Type: password
 #. Description
 #: ../openstack-pkg-tools.configure-ksat.templates:10001
-#, fuzzy
-#| msgid "Authentication server password:"
 msgid "Auth server service password:"
-msgstr "Lösenord på identifieringsservern:"
+msgstr "Service-lösenord på autentiseringsservern:"
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-rabbit.templates:1001
 msgid "Configure RabbitMQ access with debconf?"
-msgstr ""
+msgstr "Ska tillgång till RabbitMQ hanteras med debconf?"
 
 #. Type: boolean
 #. Description
@@ -233,6 +213,9 @@ msgid ""
 "transport_url directive. Please specify whether configuring this should be "
 "handled through debconf."
 msgstr ""
+"OpenStack-tjänster behöver tillgång till en server för meddelandekö, detta "
+"anges med inställningen transport_url directive. Ange om du vill låta "
+"debconf hantera detta."
 
 #. Type: boolean
 #. Description
@@ -241,6 +224,8 @@ msgid ""
 "Only access to RabbitMQ is handled, and the RabbitMQ user creation isn't "
 "performed. A new RabbitMQ user can be created with the commands:\""
 msgstr ""
+"Enbart tillgång till RabbitMQ hanteras, användare för RabbitMQ genomförs "
+"inte. En ny RabbitMQ-användare kan skapas med kommandona:"
 
 #. Type: boolean
 #. Description
@@ -249,6 +234,8 @@ msgid ""
 " - rabbitmqctl add_user openstack PASSWORD\n"
 " - rabbitmqctl set_permissions -p / openstack \".*\" \".*\" \".*\""
 msgstr ""
+" - rabbitmqctl add_user openstack PASSWORD\n"
+" - rabbitmqctl set_permissions -p / openstack \".*\" \".*\" \".*\""
 
 #. Type: boolean
 #. Description
@@ -257,6 +244,8 @@ msgid ""
 "Note that the default RabbitMQ guest account cannot be used for remote "
 "connections."
 msgstr ""
+"Observera att RabbitMQs gästanvändare kan inte användas för att att göra "
+"fjärranslutningar."
 
 #. Type: string
 #. Description
@@ -295,8 +284,6 @@ msgstr "Användarnamn för att ansluta till RabbitMQ-servern:"
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-rabbit.templates:3001
-#, fuzzy
-#| msgid "Please specify the username used to connect to the RabbitMQ server."
 msgid "Please specify the username used to connect to that RabbitMQ server."
 msgstr ""
 "Ange användarnamnet som ska användas för att ansluta till RabbitMQ-servern:"
@@ -310,48 +297,38 @@ msgstr "Lösenord för att ansluta till RabbitMQ-servern:"
 #. Type: password
 #. Description
 #: ../openstack-pkg-tools.configure-rabbit.templates:4001
-#, fuzzy
-#| msgid "Please specify the password used to connect to the RabbitMQ server."
 msgid "Please specify the password used to connect to that RabbitMQ server."
 msgstr "Lösenord för att ansluta till RabbitMQ-servern:"
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:1001
-#, fuzzy
-#| msgid "Register Glance in the Keystone endpoint catalog?"
 msgid "Register this service in the Keystone endpoint catalog?"
-msgstr "Ska Glance registreras i keystones katalog med ändpunkter?"
+msgstr "Ska tjänsten registreras i keystones katalog med ändpunkter?"
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:1001
-#, fuzzy
-#| msgid ""
-#| "Each OpenStack service (each API) should be registered in order to be "
-#| "accessible. This is done using \"keystone service-create\" and \"keystone "
-#| "endpoint-create\". This can be done automatically now."
 msgid ""
 "Each OpenStack service (each API) must be registered in the Keystone catalog "
 "in order to be accessible. This is done using \"openstack service create\" "
 "and \"openstack endpoint create\". This can be done automatically now."
 msgstr ""
-"Alla OpenStack-tjänster (varje API) ska registreras för att kunna användas. "
-"Detta görs med kommandona \"keystone service-create\" och \"keystone "
-"endpoint-create\". Detta kan göras automatiskt nu."
+"Alla OpenStack-tjänster (varje API) bör registreras i Keystones katalog för "
+"att kunna användas. Detta görs med kommandona \"openstack service create\" "
+"och \"openstack endpoint create\". Detta kan göras automatiskt nu."
 
 #. Type: boolean
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:1001
-#, fuzzy
-#| msgid ""
-#| "Note that you will need to have an up and running Keystone server on "
-#| "which to connect using the Keystone authentication token."
 msgid ""
 "Note that you will need to have an up and running Keystone server on which "
 "to connect using a known admin project name, admin username and password. "
 "The admin auth token is not used anymore."
-msgstr "OBS. Du behöver ha en fungerande keystone-server att ansluta till."
+msgstr ""
+"OBS. Du behöver ha en uppdaterad keystone-server att ansluta till (genom att "
+"ange ett adminprojekt, användarnamn och lösenord). Autentiseringsuttryck för "
+"administratör används ej längre."
 
 #. Type: boolean
 #. Description
@@ -360,28 +337,24 @@ msgid ""
 "Also, if a service with a matching name is already present in the Keystone "
 "catalog, endpoint registration will be aborted."
 msgstr ""
+"Notera även att om en tjänst med samma namn redan finns registrerad i "
+"Keystones katalog så kommer registreringsförsöket att avbrytas."
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:2001
-#, fuzzy
-#| msgid "Keystone server IP address:"
 msgid "Keystone server address:"
-msgstr "IP-adress till Keystone:"
+msgstr "Adress till Keystone:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:2001
-#, fuzzy
-#| msgid ""
-#| "Please enter the IP address of the Keystone server, so that glance-api "
-#| "can contact Keystone to do the Glance service and endpoint creation."
 msgid ""
 "Please enter the address (IP or resolvable address) of the Keystone server, "
 "for creating the new service and endpoints."
 msgstr ""
-"Ange IP-adressen till din Keystone-server så att glance-api kan kontakta "
-"Keystone för att lägga till Glance-tjänsten som en ändpunkt."
+"Ange adressen (IP eller värdnamn som kan slås upp) till din Keystone-server "
+"för att lägga till tjänsten som en ny service och ändpunkt."
 
 #. Type: string
 #. Description
@@ -390,22 +363,20 @@ msgid ""
 "Any non-valid ipv4, ipv6 or host address string will abort the endpoint "
 "registration."
 msgstr ""
+"Ett felaktigt värde för IPv4, IPv6 eller värdnamn kommer att avbryta "
+"registreringen av ändpunkten."
 
 #. Type: select
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:3001
-#, fuzzy
-#| msgid "Keystone authentication token:"
 msgid "Keystone endpoint protocol:"
-msgstr "Autetiseringsvärde för Keystone:"
+msgstr "Protokoll för att nå ändpunkt på Keystone:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:4001
-#, fuzzy
-#| msgid "Keystone authentication token:"
 msgid "Keystone admin username:"
-msgstr "Autetiseringsvärde för Keystone:"
+msgstr "Användarnamn för administrarör på Keystone:"
 
 #. Type: string
 #. Description
@@ -421,44 +392,43 @@ msgid ""
 "username, project name, and password, so it can issue commands through the "
 "Keystone API."
 msgstr ""
+"För att kunna skapa tjänstens ändpunkt behöver detta paket veta "
+"projektnamnet samt användarnamn och lösenord för administratören för att "
+"kunna utföra kommandon genom Keystones API."
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:5001
 msgid "Keystone admin project name:"
-msgstr ""
+msgstr "Projektnamn att använda i Keystone:"
 
 #. Type: password
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:6001
 msgid "Keystone admin password:"
-msgstr ""
+msgstr "Lösenord för administratör på Keystone:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:7001
-#, fuzzy
-#| msgid "Glance endpoint IP address:"
 msgid "This service endpoint address:"
-msgstr "IP-adress för Glance-ändpunkt:"
+msgstr "Tjänstens ändpunkt-adress:"
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:7001
-#, fuzzy
-#| msgid "Please enter the IP address that will be used to contact Glance."
 msgid ""
 "Please enter the endpoint address that will be used to contact this service. "
 "You can specify either a Fully Qualified Domain Name (FQDN) or an IP address."
-msgstr "Ange den IP-adress som ska användas för att kontakta Glance."
+msgstr ""
+"Ange den ändpunkts-adress som kommer att användas för att kontakta denna "
+"tjänst. Du kan ange antingen ett komplett värdnamn (FQDN) eller en IP-adress."
 
 #. Type: select
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:8001
-#, fuzzy
-#| msgid "Glance endpoint IP address:"
 msgid "This service endpoint protocol:"
-msgstr "IP-adress för Glance-ändpunkt:"
+msgstr "Protokoll för tjänstens ändpunkt:"
 
 #. Type: string
 #. Description
@@ -469,26 +439,19 @@ msgstr "Regionnamn:"
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:9001
-#, fuzzy
-#| msgid ""
-#| "OpenStack supports using availability zones, with each region "
-#| "representing a location. Please enter the zone that you wish to use when "
-#| "registering the endpoint."
 msgid ""
 "OpenStack supports using regions, with each region representing a different "
 "location (usually a different data center). Please enter the region name "
 "that you wish to use when registering the endpoint."
 msgstr ""
-"OpenStack kan användas med tillgänglighetszoner. Varje region representerar "
-"en plats. Ange zonen som ska användas när ändpunkten registreras."
+"OpenStack kan användas med regioner. Varje region representerar en plats "
+"(vanligen separerade datacenter). Ange det regionnamn som ska användas när "
+"ändpunkten registreras."
 
 #. Type: string
 #. Description
 #: ../openstack-pkg-tools.configure-endpoint.templates:9001
 msgid "A non-valid string will abort the API endpoint registration."
 msgstr ""
-
-#, fuzzy
-#~| msgid "Authentication server tenant name:"
-#~ msgid "Auth server admin endpoint URL:"
-#~ msgstr "Namn för \"tenant\" (administratör) på identifieringsservern:"
+"En sträng som inte är korrekt kommer att avbryta registreringen av "
+"ändpunkten."

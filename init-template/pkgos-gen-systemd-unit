@@ -50,6 +50,7 @@ fi
 if [ -n "${SHOULD_START}" ] ; then
 	for i in ${SHOULD_START} ; do
 		AFTER="${AFTER}${i}.service "
+		WANTS="${WANTS}${i}.service "
 	done
 fi
 
@@ -69,6 +70,7 @@ for i in $(cat ${INIT_TEMPLATE} | grep "# Required-Start:" | sed 's/# Required-S
 	# Write down all of the others
 	else
 		AFTER="${AFTER}${i}.service "
+		WANTS="${WANTS}${i}.service "
 	fi
 done
 if [ "${WANTS}" = "Wants=" ]; then
