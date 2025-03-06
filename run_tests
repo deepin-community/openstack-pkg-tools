@@ -6,6 +6,10 @@ set -e
 # it just searches for all test_ scripts under the tests
 # folder, and run them.
 
+GREEN="\033[1;32m"
+RED="\033[1;31m"
+NO_COL="\033[0m"
+
 echo "Running shell script unit tests..."
 
 CURDIR=$(pwd)
@@ -17,19 +21,19 @@ for i in $(find tests -type f -iname 'test_*') ; do
 	cd ${DIRNAME}
 	echo -n $i" ... "
 	if ./${BASENAME} ; then
-		echo "OK"
+		echo "${GREEN}OK${NO_COL}"
 	else
 		SUCCESS=no
-		echo "FAILED"
+		echo "${RED}FAILED${NO_COL}"
 	fi
 	cd ${CURDIR}
 	CNT=$(( ${CNT} + 1 ))
 done
 
 if [ "${SUCCESS}" = "yes" ] ; then
-	echo "Successfully ran ${CNT} tests :)"
+	echo "${GREEN}Successfully ran ${CNT} tests :)${NO_COL}"
 	exit 0
 else
-	echo "Failure while running unit tests :("
+	echo "${RED}Failure while running unit tests :(${NO_COL}"
 	exit 1
 fi

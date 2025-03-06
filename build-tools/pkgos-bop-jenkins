@@ -108,6 +108,10 @@ if [ "${PRIS}" = "pristine-tar" ] ; then
 	PRIS_UPSTREAM_BRANCH=$(grep upstream-branch debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
 	PRIS_DEBIAN_BRANCH=$(grep debian-branch debian/gbp.conf | cut -d'=' -f2 | awk '{print $1}')
 
+	if [ -z "${PRIS_DEBIAN_BRANCH}" ] ; then
+		PRIS_DEBIAN_BRANCH=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+	fi
+
 	# If it's a pristine-tar package, checkout the pristine-tar and upstream-unstable branches
 	git checkout -b pristine-tar origin/pristine-tar
 	git checkout -b ${PRIS_UPSTREAM_BRANCH} origin/${PRIS_UPSTREAM_BRANCH}
@@ -180,4 +184,5 @@ fi
 
 # Build the package using sbuild (see that script, which can be used
 # in your own laptop if you don't want to use jenkins...)
+echo "calling pkgos-bop from "`pwd`
 pkgos-bop

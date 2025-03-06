@@ -4,8 +4,6 @@ set -e
 set -x
 
 # Config vars
-PKGOS_USE_PY2=yes
-PKGOS_USE_PY3=yes
 PKGOS_TEST_PARALLEL=yes
 PKGOS_TEST_SERIAL=no
 
@@ -18,11 +16,11 @@ TEST_SERIAL_OPT=""
 for i in $@ ; do
 	case "${1}" in
 	"--no-py3")
-		PKGOS_USE_PY3=no
+		echo "WARNING: --no-py3 is deprecated, and always off."
 		shift
 		;;
 	"--no-py2")
-		PKGOS_USE_PY2=no
+		echo "WARNING: --no-py2 is deprecated, and always on."
 		shift
 		;;
         "--no-parallel")
@@ -39,12 +37,7 @@ for i in $@ ; do
 	esac
 done
 
-if [ "${PKGOS_USE_PY2}" = "yes" ] ; then
-	PYTHONS=2.7
-fi
-if [ "${PKGOS_USE_PY3}" = "yes" ] ; then
-	PYTHON3S=$(py3versions -vr 2>/dev/null)
-fi
+PYTHON3S=$(py3versions -vr 2>/dev/null)
 if [ "${PKGOS_TEST_PARALLEL}" = "no" ] ; then
 	TEST_PARALLEL_OPT=""
 fi
@@ -52,20 +45,15 @@ if [ "${PKGOS_TEST_SERIAL}" = "yes" ] ; then
 	TEST_SERIAL_OPT="--serial"
 fi
 
-for pyvers in ${PYTHONS} ${PYTHON3S}; do
+for pyvers in ${PYTHON3S}; do
 	if [ "${pyvers}" = "disabled" ] ; then
 		continue
 	fi
 	PYMAJOR=$(echo ${pyvers} | cut -d'.' -f1)
 	echo "===> Testing with python${pyers} (python${PYMAJOR})"
-	if [ "${PYMAJOR}" = "3" ] ; then
-		if [ -d `pwd`/debian/tmp/usr/lib/python3/dist-packages ] && [ -z "${PYTHONPATH}" ] ; then
-			export PYTHONPATH=`pwd`/debian/tmp/usr/lib/python3/dist-packages
-		fi
-	elif [ "${PYMAJOR}" = "2" ] ; then
-		if [ -d `pwd`/debian/tmp/usr/lib/python2.7/dist-packages ] && [ -z "${PYTHONPATH}" ] ; then
-			export PYTHONPATH=`pwd`/debian/tmp/usr/lib/python2.7/dist-packages
-		fi
+	if [ -d `pwd`/debian/tmp/usr/lib/python3/dist-packages ] && [ -z "${PYTHONPATH}" ] ; then
+		echo "Implicitly adding PYTHONPATH="`pwd`"/debian/tmp/usr/lib/python3/dist-packages"
+		export PYTHONPATH=`pwd`/debian/tmp/usr/lib/python3/dist-packages
 	fi
 	if [ -e .stestr.conf ] ; then
 		if [ -x /usr/bin/python${PYMAJOR}-stestr ] ; then

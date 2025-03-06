@@ -27,6 +27,13 @@ fi
 # It's possible to give the repo name as parameter
 if [ -n "${1}" ] ; then
 	REPO_DEST=${1}
+	shift
+fi
+
+NOT_AUTOMATIC=""
+if [ "${1}" = "--not-automatic" ] ; then
+	NOT_AUTOMATIC="-o APT::FTPArchive::Release::NotAutomatic=yes -o APT::FTPArchive::Release::ButAutomaticUpgrades=yes"
+	shift
 fi
 
 # Scan the repo
@@ -48,7 +55,7 @@ scan_repo() {
 	cd dists/${REPO_DEST}
 	rm -f Release Release.gpg
 	TMPFILE=`mktemp -t pkgos_scan.XXXXXX`
-	apt-ftparchive release . -o APT::FTPArchive::Release::Origin="Mirantis" -o APT::FTPArchive::Release::Codename="${REPO_DEST}" > ${TMPFILE}
+	apt-ftparchive release . -o APT::FTPArchive::Release::Origin="osbpo" -o APT::FTPArchive::Release::Codename="${REPO_DEST}" ${NOT_AUTOMATIC} > ${TMPFILE}
 	mv ${TMPFILE} ./Release
 	gpg -abs -o Release.gpg Release
 	gpg --clearsign Release

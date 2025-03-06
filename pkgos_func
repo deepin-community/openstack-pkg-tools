@@ -6,6 +6,18 @@ pkgos_gen_pass () {
 	echo ${i% *}
 }
 
+pkgos_add_section () {
+        local CONF_FILE SECTION
+        CONF_FILE=${1}
+        SECTION=${2}
+
+        # Check if section exists
+        if ! grep -q -E '^[ \t]*\['${SECTION}'\][ \t]*$' ${CONF_FILE} ; then
+        	# If not, add it to the config file
+        	echo "[${SECTION}]" >>${CONF_FILE}
+        fi
+}
+
 # This function removes a section, because we need that in the case
 # of an upgrade from one version to the next. It is for example
 # needed for keystone to upgrade from Grizzly to Havana.
@@ -599,18 +611,18 @@ pkgos_dbc_postinst () {
 					# Set the DB as UTF8
 					Q="ALTER DATABASE \`${dbc_dbname}\` CHARACTER SET utf8"
 					pkgos_mysql_query ${dbc_dbuser} ${dbc_dbpass} ${dbc_dbserver:-localhost} "${dbc_dbport}" ${dbc_dbname} "${Q}"
-					echo "===> opensatck-pkg-tools: writing db credentials: mysql+pymysql://$dbc_dbuser:XXXXXX@${dbc_dbserver:-localhost}$dbport/$dbc_dbname ..."
+					echo "===> openstack-pkg-tools: writing db credentials: mysql+pymysql://$dbc_dbuser:XXXXXX@${dbc_dbserver:-localhost}$dbport/$dbc_dbname ..."
 					;;
 				postgresql*|pgsql)
 					if [ -n "$dbc_dbport" ] ; then
 						dbport=:$dbc_dbport
 					fi
 					SQL_CONNECTION="postgresql://$dbc_dbuser:$dbc_dbpass@${dbc_dbserver:-localhost}$dbport/$dbc_dbname"
-					echo "===> opensatck-pkg-tools: writing db credentials: postgresql://$dbc_dbuser:XXXXXX@${dbc_dbserver:-localhost}$dbport/$dbc_dbname ..."
+					echo "===> openstack-pkg-tools: writing db credentials: postgresql://$dbc_dbuser:XXXXXX@${dbc_dbserver:-localhost}$dbport/$dbc_dbname ..."
 					;;
 				*)
 					SQL_CONNECTION="sqlite:///$dbc_basepath/$dbc_dbname"
-					echo "===> opensatck-pkg-tools: writing db credentials: ${SQL_CONNECTION} ..."
+					echo "===> openstack-pkg-tools: writing db credentials: ${SQL_CONNECTION} ..."
 					;;
 			esac
 			pkgos_inifile set ${DBC_POST_CONF_PATH} ${CONN_SECTION} ${CONN_DIRECTIVE} ${SQL_CONNECTION}
@@ -795,7 +807,7 @@ pkgos_write_admin_creds () {
 			#echo "Adding role service to the user ${SERVICE_USERNAME} ..."
 			#openstack role add --project ${SERVICE_PROJECTNAME} --user ${SERVICE_USERNAME} service
 		fi
-		echo "===> opensatck-pkg-tools: writing ${WRITE_CRED_SECTION} credentials for user ${SERVICE_USERNAME} and project ${SERVICE_PROJECTNAME} ..."
+		echo "===> openstack-pkg-tools: writing ${WRITE_CRED_SECTION} credentials for user ${SERVICE_USERNAME} and project ${SERVICE_PROJECTNAME} ..."
 		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} username ${SERVICE_USERNAME}
 		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} project_name ${SERVICE_PROJECTNAME}
 		pkgos_inifile set ${WRITE_CRED_CONF_FNAME} ${WRITE_CRED_SECTION} password ${SERVICE_PASSWORD}
@@ -838,7 +850,7 @@ pkgos_adduser () {
 	VAR_UG_SHELL=${2}
 
 	if [ -z "${VAR_UG_SHELL}" ] ; then
-		VAR_UG_SHELL='/bin/false'
+		VAR_UG_SHELL='/bin/sbin/nologin'
 	fi
 
 	# These are reserved UID/GID allocation
